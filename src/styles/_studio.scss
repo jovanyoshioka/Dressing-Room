@@ -254,15 +254,27 @@ select:focus-visible {
     inset 3px 3px #777,
     inset -3px -3px #eee;
 }
-.expand-button {
+.expand-button, .env-button {
   position: absolute;
   right: 1%;
-  bottom: 11%;
   width: var(--preview-button-size, 46px);
+  height: var(--preview-button-size, 46px);
   aspect-ratio: 1;
   min-width: 46px;
+  min-height: 46px;
   padding: 5px;
   z-index: 2;
+  box-sizing: border-box;
+}
+.expand-button {
+  bottom: 11%;
+}
+.env-button {
+  bottom: calc(11% + var(--preview-button-size, 46px) + 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--heading);
 }
 .expand-icon {
   display: block;
@@ -569,3 +581,7 @@ dialog h2 {
 .skin-tile .hover-preview[hidden] {
   display: none;
 }
+
+
+.preview-backdrop.has-image { filter: blur(4px) brightness(0.7); transform: scale(1.1); }
+

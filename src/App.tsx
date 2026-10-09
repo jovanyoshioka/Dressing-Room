@@ -39,6 +39,8 @@ export function App() {
   const [help, setHelp] = useState(false);
   const [hasSelected, setHasSelected] = useState(false);
   const [thumbnails, setThumbnails] = useState<ThumbnailRenderer | null>(null);
+  const [envIndex, setEnvIndex] = useState(0);
+  const envs = ["overworld", "sift", "cave", "nether", "end", "none"];
 
   // --- DOM References ---
   const pngInput = useRef<HTMLInputElement>(null);
@@ -251,7 +253,7 @@ export function App() {
           kind === "folder"
             ? runtime.importer.folder(files, opts)
             : runtime.importer.archive(files[0], opts);
-            
+
         let result = await load();
 
         if ("roots" in result) {
@@ -382,7 +384,20 @@ export function App() {
       </section>
       <section className="character-panel" aria-label="Current player">
         <div className="player-stage">
-          <div className="preview-backdrop" aria-hidden="true" />
+          <div
+            className={`preview-backdrop ${envs[envIndex] !== "none" ? "has-image" : ""}`}
+            aria-hidden="true"
+            style={
+              envs[envIndex] !== "none"
+                ? {
+                    backgroundImage: `url(${import.meta.env.BASE_URL}assets/environments/${envs[envIndex]}.png)`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center center",
+                    backgroundColor: "transparent",
+                  }
+                : undefined
+            }
+          />
           {runtime && player && (
             <PlayerPreview runtime={runtime} view={player} tracking />
           )}
@@ -395,6 +410,17 @@ export function App() {
             <img
               className="expand-icon"
               src={`${import.meta.env.BASE_URL}assets/ui/${expanded ? "minimize" : "expand"}.svg`}
+              alt=""
+            />
+          </button>
+          <button
+            className="env-button minecraft-button"
+            aria-label="Change environment"
+            onClick={() => setEnvIndex((envIndex + 1) % envs.length)}
+          >
+            <img
+              className="expand-icon"
+              src={`${import.meta.env.BASE_URL}assets/ui/picture.svg`}
               alt=""
             />
           </button>
