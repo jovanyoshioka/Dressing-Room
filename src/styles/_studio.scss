@@ -1,0 +1,571 @@
+$rail-width: 6%;
+$panel: #202020;
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+body {
+  background: #171717;
+  color: white;
+  font-family: MC, monospace;
+}
+button,
+select,
+input {
+  font: inherit;
+}
+button {
+  color: inherit;
+  cursor: pointer;
+  border-radius: 0;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+button:focus-visible,
+a:focus-visible,
+select:focus-visible {
+  outline: 3px solid #8ce8f2;
+  outline-offset: -3px;
+}
+.dressing-room {
+  height: 100dvh;
+  border: 0;
+  display: grid;
+  grid-template-columns: $rail-width 49.2% 1fr;
+  gap: 0.4%;
+  padding-right: 0.4%;
+  overflow: hidden;
+  position: relative;
+}
+.tab-rail {
+  background: #303232;
+  border-right: 4px solid black;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 20px;
+}
+.tab-rail::after {
+  content: "";
+  border-top: 6px ridge #111;
+  flex: 1;
+}
+.menu-button,
+.rail-tab {
+  border: 0;
+  background: transparent;
+  width: 100%;
+  flex-shrink: 0;
+}
+.menu-button {
+  height: 10%;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.menu-button span {
+  width: 34%;
+  height: 6px;
+  background: white;
+}
+.rail-tab {
+  height: 9.2%;
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+}
+.rail-tab.active {
+  background: #474949;
+}
+.pixel-icon {
+  display: grid;
+  place-items: center;
+  width: 40%;
+  aspect-ratio: 1;
+  background: #719843;
+  border: 5px solid #20251b;
+  box-shadow:
+    inset 3px 3px #a1b765,
+    inset -3px -3px #33551a;
+  color: #cfdda0;
+  font-size: clamp(20px, 2vw, 42px);
+  line-height: 1;
+}
+.icon-0 {
+  background: linear-gradient(90deg, #ddae70 50%, #477636 50%);
+}
+.icon-1 {
+  background: #23707a;
+  color: #ac7d61;
+}
+.icon-3 {
+  background: #ba8a3c;
+  color: #f7de95;
+}
+.icon-4 {
+  background: #b83f46;
+  color: #eda4a6;
+  border-color: #3b2427;
+}
+.skin-panel {
+  margin: 10px 0 4px;
+  border: 4px solid #050505;
+  box-shadow: inset 0 0 0 3px #393939;
+  background: $panel;
+  padding: 23px 32px 16px 17px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-color: #bcbcbc #3e3e3e;
+  scrollbar-width: auto;
+}
+.skin-panel::-webkit-scrollbar {
+  width: 14px;
+}
+.skin-panel::-webkit-scrollbar-track {
+  background: #3e3e3e;
+  border: 2px solid #222;
+}
+.skin-panel::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border: 3px ridge #ddd;
+}
+.skin-pack {
+  margin: 0 0 21px;
+}
+.skin-pack h2 {
+  font-weight: normal;
+  font-size: clamp(22px, 2vw, 43px);
+  margin: 0 0 4px;
+  line-height: 1.1;
+}
+.skin-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  min-height: 0;
+  border: 4px solid #141414;
+  background: #343434;
+}
+.skin-tile,
+.overflow-tile {
+  position: relative;
+  width: 100%;
+  padding: 0;
+  aspect-ratio: 0.635;
+  border: 4px solid transparent;
+  background: #343434;
+  display: block;
+  overflow: hidden;
+}
+.skin-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  user-select: none;
+  pointer-events: none;
+}
+.skin-tile:hover {
+  background: #484848;
+}
+.skin-tile.selected {
+  border-color: #93eaf7;
+  background: #404444;
+}
+.overflow-tile {
+  background: #505050;
+  border: 4px ridge #666;
+  font-size: clamp(23px, 2vw, 42px);
+}
+.overflow-tile:hover {
+  background: #686868;
+}
+.skin-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-content: start;
+  gap: 7px;
+}
+.skin-grid .skin-tile {
+  background: #4d4d4d;
+  border: 4px ridge #666;
+}
+.skin-grid .skin-tile.selected {
+  border: 4px solid #93eaf7;
+}
+.pack-back {
+  background: transparent;
+  border: 0;
+  text-align: left;
+  font-size: clamp(18px, 1.5vw, 32px);
+  margin: -9px 0 12px;
+  padding: 0;
+}
+.character-panel {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 70% 30%;
+  position: relative;
+}
+.player-stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+.player-canvas {
+  position: absolute !important;
+  inset: 0;
+  cursor: grab;
+  touch-action: none;
+  z-index: 1;
+}
+.preview-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: #171717;
+  background-image:
+    linear-gradient(#101010 2px, transparent 2px),
+    linear-gradient(90deg, #101010 2px, transparent 2px);
+  background-size: 64px 32px;
+}
+.minecraft-button {
+  color: #484848;
+  background: #c6c6c6;
+  border: 4px solid #151515;
+  box-shadow:
+    inset 3px 3px #eee,
+    inset -4px -4px #777;
+  padding: 9px 13px;
+}
+.minecraft-button:hover {
+  background: #dedede;
+}
+.minecraft-button:active {
+  box-shadow:
+    inset 3px 3px #777,
+    inset -3px -3px #eee;
+}
+.expand-button {
+  position: absolute;
+  right: 1%;
+  bottom: 11%;
+  width: var(--preview-button-size, 46px);
+  aspect-ratio: 1;
+  min-width: 46px;
+  padding: 5px;
+  z-index: 2;
+}
+.expand-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.skin-information {
+  border: 4px solid black;
+  margin-bottom: 4px;
+  background: $panel;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.skin-information header {
+  display: flex;
+  flex: 0 0 20%;
+  min-height: 0;
+  justify-content: space-between;
+  align-items: center;
+  background: #343434;
+  padding: 7px 12px;
+  gap: 15px;
+  overflow: hidden;
+}
+.skin-information h1 {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: MCHeader, MC, monospace;
+  font-size: clamp(21px, 1.9vw, 40px);
+  font-weight: normal;
+  margin: 0;
+  text-transform: uppercase;
+}
+.skin-information header span {
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(17px, 1.6vw, 34px);
+}
+.information-content {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding: 18px;
+  font-family: Arial, sans-serif;
+  font-size: clamp(18px, 1.55vw, 34px);
+  line-height: 1.7;
+}
+.information-content p {
+  margin: 0;
+}
+.choose-skin {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  font-family: MC, monospace;
+  font-size: clamp(20px, 1.9vw, 40px);
+}
+.help-button {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 9%;
+  min-width: 45px;
+  aspect-ratio: 1;
+  padding: 4px;
+  font-size: clamp(18px, 1.7vw, 36px);
+}
+.help-text {
+  font-size: 16px;
+  background: #202020;
+}
+.hidden-upload {
+  display: none;
+}
+.import-menu {
+  position: absolute;
+  z-index: 6;
+  left: 6.5%;
+  top: 10px;
+  width: min(430px, 86vw);
+  padding: 22px;
+  border: 4px solid black;
+  box-shadow: 0 5px 30px #0009;
+  background: #333;
+  display: grid;
+  gap: 18px;
+}
+.import-menu h2 {
+  margin: 0;
+  font-weight: normal;
+}
+.import-menu label {
+  display: grid;
+  gap: 8px;
+}
+.import-menu select {
+  width: 100%;
+  background: #555;
+  color: white;
+  padding: 8px;
+}
+.import-menu a {
+  color: #b4e8f1;
+}
+.message {
+  position: absolute;
+  bottom: 10px;
+  left: 7%;
+  z-index: 7;
+  max-width: 46%;
+  background: #222;
+  border: 2px solid #888;
+  padding: 8px;
+  font-size: 14px;
+}
+.error {
+  color: #ffb6b6;
+}
+.preview-expanded {
+  border: 0;
+}
+.preview-expanded .skin-panel {
+  visibility: hidden;
+}
+.preview-expanded .character-panel {
+  position: absolute;
+  inset: 0 0 0 6%;
+  z-index: 4;
+  display: block;
+  grid-column: auto;
+  grid-row: auto;
+  background: #171717;
+}
+.preview-expanded .player-stage {
+  width: 100%;
+  height: 100%;
+}
+.preview-expanded .skin-information {
+  display: none;
+}
+.loading {
+  font-size: 20px;
+}
+dialog {
+  background: #303030;
+  color: white;
+  border: 4px solid #aaa;
+  max-width: min(640px, 90vw);
+  max-height: 85vh;
+  padding: 24px;
+}
+dialog::backdrop {
+  background: #000a;
+}
+dialog h2 {
+  margin-top: 0;
+}
+.dialog-buttons {
+  display: flex;
+  gap: 14px;
+  margin-top: 20px;
+}
+.dialog-buttons button {
+  padding: 10px;
+  background: #555;
+  border: 2px solid #aaa;
+}
+@media (max-width: 768px) {
+  .dressing-room {
+    grid-template-columns: 58px 1fr;
+    grid-template-rows: 48% 52%;
+    gap: 4px;
+    padding-right: 4px;
+  }
+  .tab-rail {
+    grid-row: 1 / 3;
+  }
+  .menu-button {
+    min-height: 55px;
+  }
+  .rail-tab {
+    height: 64px;
+    min-height: 0;
+  }
+  .pixel-icon {
+    width: 38px;
+  }
+  .skin-panel {
+    margin-top: 4px;
+    padding: 12px 8px;
+  }
+  .skin-pack h2 {
+    font-size: 22px;
+  }
+  .skin-pack {
+    margin-bottom: 15px;
+  }
+  .skin-tile,
+  .overflow-tile {
+    border-width: 2px;
+  }
+  .skin-row {
+    border-width: 2px;
+  }
+  .skin-grid {
+    gap: 3px;
+  }
+  .character-panel {
+    grid-column: 2;
+    grid-template-rows: 70% 30%;
+  }
+  .skin-information {
+    border-width: 2px;
+  }
+  .skin-information header {
+    padding: 3px 7px;
+  }
+  .skin-information h1 {
+    font-size: 17px;
+  }
+  .skin-information header span {
+    font-size: 14px;
+  }
+  .information-content {
+    padding: 7px;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  .choose-skin {
+    font-size: 16px;
+    padding: 5px 8px;
+    bottom: 2px;
+  }
+  .help-button {
+    min-width: 30px;
+    bottom: 2px;
+    font-size: 16px;
+  }
+  .minecraft-button {
+    border-width: 2px;
+  }
+  .expand-button {
+    bottom: 7%;
+  }
+  .import-menu {
+    left: 60px;
+  }
+  .preview-expanded .character-panel {
+    left: 58px;
+  }
+  .message {
+    left: 65px;
+    max-width: 75%;
+  }
+}
+
+.tab-icon {
+  width: 40%;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+}
+.expand-button svg,
+.help-button svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.help-button svg {
+  height: 75%;
+}
+@media (max-width: 768px) {
+  .tab-icon {
+    width: 38px;
+  }
+}
+
+.rail-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.rail-tab:disabled .tab-icon {
+  filter: grayscale(1);
+}
+.skin-tile .hover-preview {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+.skin-tile .hover-preview[hidden] {
+  display: none;
+}
