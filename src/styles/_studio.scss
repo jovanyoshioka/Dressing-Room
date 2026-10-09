@@ -36,6 +36,8 @@ select:focus-visible {
   outline-offset: -3px;
 }
 .dressing-room {
+  --rail-button-width: calc(6vw - 4px);
+  --rail-icon-size: calc((var(--rail-button-width) - 12px) * .4);
   height: 100dvh;
   border: 0;
   display: grid;
@@ -65,7 +67,7 @@ select:focus-visible {
   flex-shrink: 0;
 }
 .menu-button {
-  height: 10%;
+  height: 10dvh;
   min-height: 64px;
   display: flex;
   flex-direction: column;
@@ -79,7 +81,7 @@ select:focus-visible {
   background: white;
 }
 .rail-tab {
-  height: 9.2%;
+  height: 9.2dvh;
   min-height: 58px;
   display: grid;
   place-items: center;
@@ -118,6 +120,7 @@ select:focus-visible {
   border-color: #3b2427;
 }
 .skin-panel {
+  grid-column: 2;
   margin: 10px 0 4px;
   border: 4px solid #050505;
   box-shadow: inset 0 0 0 3px #393939;
@@ -211,6 +214,7 @@ select:focus-visible {
   padding: 0;
 }
 .character-panel {
+  grid-column: 3;
   min-width: 0;
   display: grid;
   grid-template-rows: 70% 30%;
@@ -358,36 +362,6 @@ select:focus-visible {
 .hidden-upload {
   display: none;
 }
-.import-menu {
-  position: absolute;
-  z-index: 6;
-  left: 6.5%;
-  top: 10px;
-  width: min(430px, 86vw);
-  padding: 22px;
-  border: 4px solid black;
-  box-shadow: 0 5px 30px #0009;
-  background: #333;
-  display: grid;
-  gap: 18px;
-}
-.import-menu h2 {
-  margin: 0;
-  font-weight: normal;
-}
-.import-menu label {
-  display: grid;
-  gap: 8px;
-}
-.import-menu select {
-  width: 100%;
-  background: #555;
-  color: white;
-  padding: 8px;
-}
-.import-menu a {
-  color: #b4e8f1;
-}
 .message {
   position: absolute;
   bottom: 10px;
@@ -426,30 +400,6 @@ select:focus-visible {
 }
 .loading {
   font-size: 20px;
-}
-dialog {
-  background: #303030;
-  color: white;
-  border: 4px solid #aaa;
-  max-width: min(640px, 90vw);
-  max-height: 85vh;
-  padding: 24px;
-}
-dialog::backdrop {
-  background: #000a;
-}
-dialog h2 {
-  margin-top: 0;
-}
-.dialog-buttons {
-  display: flex;
-  gap: 14px;
-  margin-top: 20px;
-}
-.dialog-buttons button {
-  padding: 10px;
-  background: #555;
-  border: 2px solid #aaa;
 }
 @media (max-width: 768px) {
   .dressing-room {
@@ -528,9 +478,6 @@ dialog h2 {
   .expand-button {
     bottom: 7%;
   }
-  .import-menu {
-    left: 60px;
-  }
   .preview-expanded .character-panel {
     left: 58px;
   }
@@ -541,7 +488,7 @@ dialog h2 {
 }
 
 .tab-icon {
-  width: 40%;
+  width: var(--rail-icon-size);
   aspect-ratio: 1;
   image-rendering: pixelated;
 }
@@ -555,8 +502,9 @@ dialog h2 {
   height: 75%;
 }
 @media (max-width: 768px) {
-  .tab-icon {
-    width: 38px;
+  .dressing-room {
+    --rail-button-width: 54px;
+    --rail-icon-size: 38px;
   }
 }
 
@@ -585,3 +533,54 @@ dialog h2 {
 
 .preview-backdrop.has-image { filter: blur(4px) brightness(0.7); transform: scale(1.1); }
 
+
+// Expanded navigation preserves the underlying grid tracks and preview sizing.
+.navigation-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  border: 0;
+  background: #000b;
+  cursor: default;
+}
+.tab-rail.menu-open {
+  position: absolute;
+  grid-row: auto;
+  grid-column: auto;
+  inset: 0 auto 0 0;
+  z-index: 9;
+  width: min(100%, max(320px, 27.6vw));
+  height: 100%;
+  padding-bottom: 20px;
+  background: #303232;
+  border-top: 0;
+}
+.menu-open .menu-button { width: var(--rail-button-width); }
+.menu-open .rail-tab {
+  grid-template-columns: var(--rail-icon-size) minmax(0, 1fr);
+  justify-items: start;
+  column-gap: 16px;
+  padding: 2px 16px 2px calc((var(--rail-button-width) - var(--rail-icon-size)) / 2);
+  text-align: left;
+}
+.menu-open .tab-icon { flex-shrink: 0; }
+.menu-button:hover, .rail-tab:not(:disabled):hover { background: #474949; }
+.rail-tab:disabled:hover { background: #3b3d3d; }
+.navigation-label { font-size: clamp(20px, 2vw, 42px); white-space: nowrap; }
+.menu-open::after { margin-top: 8px; min-height: 12px; }
+.marketplace-button {
+  order: 1;
+  flex-shrink: 0;
+  margin: 0 26px;
+  min-height: clamp(60px, 9.4vh, 96px);
+  padding: 12px;
+  background: #484949;
+  border: 4px solid #151515;
+  box-shadow: inset 3px 3px #777, inset -3px -3px #333;
+  font-size: clamp(20px, 2vw, 42px);
+}
+.marketplace-button:disabled:hover { background: #555757; }
+.marketplace-button:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(1); }
+@media (max-width: 768px) {
+  .marketplace-button { margin: 0 18px; }
+}

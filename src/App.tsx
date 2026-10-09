@@ -1,10 +1,5 @@
 import type {
   StudioRuntime,
-  BodyType,
-  ReviewRequest,
-  ReviewResponse,
-  PackImportResult,
-  ImportOptions,
   SkinDefinition,
 } from "./features/characters/types";
 import { errorDetails } from "./features/characters/skins/SkinPackImporter";
@@ -19,7 +14,6 @@ import { createRuntime } from "./features/characters/runtime";
 import { SkinTile } from "./features/characters/components/SkinTile";
 import { PlayerPreview } from "./features/characters/components/PlayerPreview";
 import { ThumbnailRenderer } from "./features/characters/previews/ThumbnailRenderer";
-import { ImportDialog } from "./components/ImportDialog";
 
 export function App() {
   // --- Application State ---
@@ -27,11 +21,9 @@ export function App() {
   const [, refresh] = useState(0);
   const [message, setMessage] = useState({ text: "", error: false });
   const [loading, setLoading] = useState("Loading characters…");
-  const [review, setReview] = useState<ReviewRequest | null>(null);
   const [busy, setBusy] = useState(false);
 
   // --- UI State ---
-  const [layout, setLayout] = useState<BodyType>("classic");
   const [packId, setPackId] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
   const [tab] = useState(2);
@@ -49,10 +41,13 @@ export function App() {
 
   useLayoutEffect(() => {
     const element = room.current!;
-    // Read the normal preview's grid track, even while the preview is expanded.
+    // Keep controls sized to their normal grid tracks when panels expand.
 
     const resize = () => {
       const columns = getComputedStyle(element).gridTemplateColumns.split(" ");
+      const railWidth = parseFloat(columns[0]);
+      if (Number.isFinite(railWidth))
+        element.style.setProperty("--rail-button-width", `${railWidth - 4}px`);
       const width = parseFloat(columns[columns.length - 1]);
       if (Number.isFinite(width))
         element.style.setProperty(
@@ -66,8 +61,9 @@ export function App() {
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const pendingReview = useRef<((value: ReviewResponse) => void) | null>(null),
-    mounted = useRef(true);
+  const mounted = useRef(true);
+  const navigation = useRef<HTMLElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
 
   const notify = useCallback((text: string, error = false) => {
     if (mounted.current) setMessage({ text, error });
@@ -108,7 +104,6 @@ export function App() {
     return () => {
       active = false;
       mounted.current = false;
-      pendingReview.current?.(null);
       created?.dispose();
     };
   }, [notify, onError]);
@@ -135,6 +130,11 @@ export function App() {
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (menu) {
+          setMenu(false);
+          menuButton.current?.focus();
+          return;
+        }
         setPackId(null);
         setExpanded(false);
         setMenu(false);
@@ -143,7 +143,7 @@ export function App() {
 
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, []);
+  }, [menu]);
 
   useEffect(() => {
     skinPanel.current?.scrollTo(0, 0);
@@ -169,108 +169,42 @@ export function App() {
     }
   };
 
-  const ask = (options: ReviewRequest) =>
-    new Promise<ReviewResponse>((resolve) => {
-      pendingReview.current = resolve;
-      setReview(options);
-    });
-
-  const finish = (value: ReviewResponse) => {
-    setReview(null);
-    const resolve = pendingReview.current;
-    pendingReview.current = null;
-    resolve?.(value);
-  };
-
-  const accept = async (result: PackImportResult) => {
-    if (!runtime) return;
-
-    const { catalog, normalizer, views } = runtime;
-    const old = catalog.packs.get(result.pack.id);
-    const same =
-      old?.fingerprint === result.pack.fingerprint &&
-      old.version.join(".") === result.pack.version.join(".");
-
-    if (same) {
-      notify(`${old.name} is already imported; reused existing entries.`);
-      result.skins.forEach((s) => s.image.close());
-      return;
-    }
-
-    if (!(await ask({ result, conflict: !!old }))) {
-      result.skins.forEach((s) => s.image.close());
-      return;
-    }
-
-    const obsolete = [...catalog.skins.values()].filter(
-      (s) => s.packId === result.pack.id,
-    );
-    const change = catalog.add(result, { replace: !!old });
-
-    normalizer.invalidate(change.removed || []);
-    thumbnails?.invalidate(obsolete.map((s) => s.id));
-
-    for (const view of views) {
-      if (view.character.skin.packId === result.pack.id && old) {
-        const skin =
-          result.skins.find((s) => s.index === view.character.skin.index) ||
-          result.skins[0];
-        await view.change(skin, view.character.definition.bodyOverride);
-      }
-    }
-
-    obsolete.forEach((s) => s.image.close());
-    runtime.onChange();
-
-    notify(
-      `Imported ${result.pack.name}: ${result.skins.length} skins${result.diagnostics.length ? `; ${result.diagnostics.length} diagnostics` : ""}.`,
-    );
-  };
-
-  const upload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    kind: "png" | "pack" | "folder",
-  ) => {
+  const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
-    const files = [...(input.files || [])];
+    const file = input.files?.[0];
     input.value = "";
-
-    if (!files.length || !runtime) return;
-
+    if (!file || !runtime) return;
     setBusy(true);
-
     try {
-      if (kind === "png") {
-        const skin = runtime.catalog.addPNG(
-          await runtime.importer.png(files[0], layout),
-        );
-        runtime.onChange();
-        await selectSkin(skin);
-        setPackId("custom");
-        notify(`Imported ${skin.name}.`);
-      } else {
-        const load = (opts: ImportOptions = {}) =>
-          kind === "folder"
-            ? runtime.importer.folder(files, opts)
-            : runtime.importer.archive(files[0], opts);
-
-        let result = await load();
-
-        if ("roots" in result) {
-          const root = await ask({ roots: result.roots });
-          if (typeof root !== "string") return;
-          result = await load({ root });
-        }
-
-        if ("roots" in result) throw Error("Choose one pack root.");
-        await accept(result);
-      }
-    } catch (e) {
-      onError(e);
+      const skin = runtime.catalog.addPNG(await runtime.importer.png(file, "classic"));
+      runtime.onChange();
+      await selectSkin(skin);
+      setPackId("custom");
+      notify(`Imported ${skin.name}.`);
+    } catch (error) {
+      onError(error);
     } finally {
       if (mounted.current) setBusy(false);
     }
   };
+
+  useEffect(() => {
+    if (!menu) return;
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const buttons = navigation.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+      if (!buttons?.length) return;
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    menuButton.current?.focus();
+    window.addEventListener("keydown", trapFocus);
+    return () => window.removeEventListener("keydown", trapFocus);
+  }, [menu]);
 
   const player = runtime?.views[0];
   const skins = runtime ? [...runtime.catalog.skins.values()] : [];
@@ -309,10 +243,14 @@ export function App() {
       ref={room}
       className={`dressing-room ${expanded ? "preview-expanded" : ""}`}
     >
-      <nav className="tab-rail" aria-label="Dressing room tabs">
+      {menu && <button className="navigation-backdrop" aria-label="Close navigation" tabIndex={-1}
+        onClick={() => { setMenu(false); menuButton.current?.focus(); }} />}
+      <nav ref={navigation} id="dressing-navigation" className={`tab-rail ${menu ? "menu-open" : ""}`} aria-label="Dressing room tabs">
         <button
+          ref={menuButton}
           className="menu-button"
-          aria-label="Import and settings"
+          aria-label="Navigation menu"
+          aria-controls="dressing-navigation"
           aria-expanded={menu}
           onClick={() => setMenu(!menu)}
         >
@@ -320,7 +258,7 @@ export function App() {
           <span />
           <span />
         </button>
-        {["Character", "Body", "Classic skins", "Capes", "Emotes"].map(
+        {["My Characters", "Character Creator", "Classic Skins", "Emotes", "Capes"].map(
           (name, i) => (
             <button
               key={name}
@@ -329,17 +267,20 @@ export function App() {
               aria-pressed={tab === i}
               aria-current={tab === i ? "page" : undefined}
               disabled={tab !== i}
+              onClick={() => { setMenu(false); menuButton.current?.focus(); }}
             >
               <img
                 className="tab-icon"
                 src={`${import.meta.env.BASE_URL}assets/ui/tab-${i}.png`}
                 alt=""
               />
+              {menu && <span className="navigation-label">{name}</span>}
             </button>
           ),
         )}
+        {menu && <button className="marketplace-button" disabled>Go to Marketplace</button>}
       </nav>
-      <section ref={skinPanel} className="skin-panel" aria-label="Skin packs">
+      <section ref={skinPanel} className="skin-panel" aria-label="Skin packs" inert={menu}>
         {openPack ? (
           <>
             <button
@@ -382,7 +323,7 @@ export function App() {
           </p>
         )}
       </section>
-      <section className="character-panel" aria-label="Current player">
+      <section className="character-panel" aria-label="Current player" inert={menu}>
         <div className="player-stage">
           <div
             className={`preview-backdrop ${envs[envIndex] !== "none" ? "has-image" : ""}`}
@@ -464,7 +405,7 @@ export function App() {
             {help && (
               <p className="help-text">
                 Drag to rotate. Move your pointer to turn the head. Choose a PNG
-                skin or import a skin pack from the menu.
+                skin using Choose New Skin.
               </p>
             )}
             {isCustom && (
@@ -509,71 +450,12 @@ export function App() {
         type="file"
         accept="image/png"
         disabled={!runtime || busy}
-        onChange={(e) => upload(e, "png")}
+        onChange={upload}
       />
-      {menu && (
-        <section className="import-menu" aria-label="Import settings">
-          <h2>Import skins</h2>
-          <label>
-            PNG arm layout
-            <select
-              id="png-layout"
-              value={layout}
-              onChange={(e) => setLayout(e.target.value as BodyType)}
-            >
-              <option value="classic">Classic · Steve</option>
-              <option value="slim">Slim · Alex</option>
-            </select>
-          </label>
-          <label>
-            Skin pack (.mcpack / ZIP)
-            <input
-              id="pack-upload"
-              type="file"
-              accept=".mcpack,.zip"
-              disabled={!runtime || busy}
-              onChange={(e) => upload(e, "pack")}
-            />
-          </label>
-          <label>
-            Extracted folder
-            <input
-              id="folder-upload"
-              type="file"
-              webkitdirectory=""
-              multiple
-              disabled={!runtime || busy}
-              onChange={(e) => upload(e, "folder")}
-            />
-          </label>
-          <button
-            className="minecraft-button"
-            onClick={() => {
-              void selectSkin(skins.find((s) => s.name === "Custom Skin")!);
-              setMenu(false);
-            }}
-          >
-            Custom skin
-          </button>
-          <a
-            href={`${import.meta.env.BASE_URL}assets/skin-packs/microsoft-sample.mcpack`}
-            download="skins.mcpack"
-          >
-            Microsoft sample pack ↓
-          </a>
-        </section>
-      )}
       {message.text && (
         <p className={`message ${message.error ? "error" : ""}`} role="status">
           {message.text}
         </p>
-      )}
-      {review && (
-        <ImportDialog
-          key={review.roots ? "roots" : "skins"}
-          review={review}
-          finish={finish}
-        />
       )}
     </main>
   );
