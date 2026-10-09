@@ -57,7 +57,8 @@ select:focus-visible {
 }
 .tab-rail::after {
   content: "";
-  border-top: 6px ridge #111;
+  border-top: 5px solid #000;
+  box-shadow: inset 0 5px #454647;
   flex: 1;
 }
 .menu-button,
@@ -566,7 +567,7 @@ select:focus-visible {
 .menu-button:hover, .rail-tab:not(:disabled):hover { background: #474949; }
 .rail-tab:disabled:hover { background: #3b3d3d; }
 .navigation-label { font-size: clamp(20px, 2vw, 42px); white-space: nowrap; }
-.menu-open::after { margin-top: 8px; min-height: 12px; }
+.menu-open::after { min-height: 12px; }
 .marketplace-button {
   order: 1;
   flex-shrink: 0;
