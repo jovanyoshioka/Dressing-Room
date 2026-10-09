@@ -6,12 +6,14 @@ export function SkinTile({
   skin,
   renderer,
   selected,
+  locked = false,
   onSelect,
   onError,
 }: {
   skin: SkinDefinition;
   renderer: ThumbnailRenderer;
   selected: boolean;
+  locked?: boolean;
   onSelect: () => void;
   onError: ErrorHandler;
 }) {
@@ -38,7 +40,7 @@ export function SkinTile({
   }, [hover, skin, renderer, onError]);
   return (
     <button
-      className={`skin-tile ${selected ? "selected" : ""}`}
+      className={`skin-tile ${skin.isImportPlaceholder ? "import-skin" : ""} ${selected ? "selected" : ""}`}
       title={skin.name}
       aria-label={skin.name}
       aria-pressed={selected}
@@ -57,6 +59,7 @@ export function SkinTile({
           style={{ visibility: hover ? "hidden" : "visible" }}
         />
       )}
+      {locked && <img className="skin-lock" src={`${import.meta.env.BASE_URL}assets/ui/lock.svg`} alt="Locked" />}
       <canvas
         ref={canvas}
         className="hover-preview"

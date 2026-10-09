@@ -28,8 +28,6 @@ export function App() {
   const [menu, setMenu] = useState(false);
   const [tab] = useState(2);
   const [expanded, setExpanded] = useState(false);
-  const [help, setHelp] = useState(false);
-  const [hasSelected, setHasSelected] = useState(false);
   const [thumbnails, setThumbnails] = useState<ThumbnailRenderer | null>(null);
   const [envIndex, setEnvIndex] = useState(0);
   const envs = ["overworld", "sift", "cave", "nether", "end", "none"];
@@ -162,7 +160,6 @@ export function App() {
     if (!runtime) return;
     try {
       await runtime.views[0].change(skin, null);
-      setHasSelected(true);
       notify("");
     } catch (error) {
       onError(error);
@@ -179,7 +176,7 @@ export function App() {
       const skin = runtime.catalog.addPNG(await runtime.importer.png(file, "classic"));
       runtime.onChange();
       await selectSkin(skin);
-      setPackId("custom");
+      setPackId(null);
       notify(`Imported ${skin.name}.`);
     } catch (error) {
       onError(error);
@@ -210,26 +207,25 @@ export function App() {
   const skins = runtime ? [...runtime.catalog.skins.values()] : [];
   const packs = runtime ? [...runtime.catalog.packs.values()] : [];
   const groups = [
+    { id: "custom", name: "Imported Skins", owned: true,
+      skins: skins.filter((s) => !s.packId) },
     ...packs.map((p) => ({
       id: p.id,
       name: p.name,
+      owned: p.sourceMetadata.serialize_name !== "elemental_knights",
       skins: skins.filter((s) => s.packId === p.id),
     })),
-    {
-      id: "custom",
-      name: "Custom Skins",
-      skins: skins.filter((s) => !s.packId),
-    },
   ];
   const openPack = groups.find((p) => p.id === packId);
   const isCustom = player?.character.skin.packId === null;
-  const isGray = player?.character.skin.name === "Custom Skin";
+  const isImport = player?.character.skin.isImportPlaceholder === true;
 
   const tile = (skin: SkinDefinition) =>
     thumbnails && (
       <SkinTile
         key={skin.id}
         skin={skin}
+        locked={packs.find((p) => p.id === skin.packId)?.sourceMetadata.serialize_name === "elemental_knights"}
         renderer={thumbnails}
         selected={player?.character.skin.id === skin.id}
         onSelect={() => {
@@ -296,23 +292,23 @@ export function App() {
           </>
         ) : (
           <div className="pack-rows">
-            {groups.map((pack) => (
-              <section className="skin-pack" key={pack.id}>
-                <h2>{pack.name}</h2>
-                <div className="skin-row">
-                  {pack.skins.slice(0, 5).map(tile)}
-                  {pack.skins.length > 5 && (
-                    <button
-                      className="overflow-tile"
-                      aria-label={`Show all ${pack.name} skins`}
-                      onClick={() => {
-                        setPackId(pack.id);
-                      }}
-                    >
-                      <span>+{pack.skins.length - 5}</span>
-                    </button>
-                  )}
-                </div>
+            {[{ name: "Owned Skins", owned: true }, { name: "Get More", owned: false }].map((section) => (
+              <section className="catalog-section" key={section.name} aria-label={section.name}>
+                <h2 className="catalog-heading">{section.name}</h2>
+                {groups.filter((pack) => pack.owned === section.owned).map((pack) => (
+                  <section className={`skin-pack ${pack.id === "custom" ? "imported-skins" : ""}`} key={pack.id}>
+                    {pack.id !== "custom" && <h3>{pack.name}</h3>}
+                    <div className="skin-row">
+                      {pack.skins.slice(0, pack.id === "custom" ? 4 : 5).map(tile)}
+                      {pack.skins.length > (pack.id === "custom" ? 4 : 5) && (
+                        <button className="overflow-tile" aria-label={`Show all ${pack.name} skins`}
+                          onClick={() => setPackId(pack.id)}>
+                          <span>+{pack.skins.length - (pack.id === "custom" ? 4 : 5)}</span>
+                        </button>
+                      )}
+                    </div>
+                  </section>
+                ))}
               </section>
             ))}
           </div>
@@ -371,76 +367,21 @@ export function App() {
           aria-label="Selected skin information"
         >
           <header>
-            <h1
-              title={
-                isGray
-                  ? "CUSTOM SKIN"
-                  : hasSelected
-                    ? player?.character.skin.name
-                    : "GETTING STARTED"
-              }
-            >
-              {isGray
-                ? "CUSTOM SKIN"
-                : hasSelected
-                  ? player?.character.skin.name
-                  : "GETTING STARTED"}
-            </h1>
-            {!isCustom && hasSelected && (
-              <span>
-                {
-                  groups.find((p) =>
-                    p.skins.some((s) => s.id === player?.character.skin.id),
-                  )?.name
-                }
-              </span>
-            )}
+            <h1 title={player?.character.skin.name}>{player?.character.skin.name}</h1>
+            {!isCustom && <span>{groups.find((p) => p.skins.some((s) => s.id === player?.character.skin.id))?.name}</span>}
           </header>
           <div className="information-content">
-            <p>
-              {isCustom
-                ? ""
-                : "Select items on the left to see how they look on your character!"}
+            <p className={isImport ? "import-guidance" : "information-spacer"} aria-hidden={!isImport}>
+              <img src={`${import.meta.env.BASE_URL}assets/ui/light-bulb.svg`} alt="" />
+              <span>Import a png (64x32, 64x64, or 128x128) from your device to use as your skin. This will not sync between devices or games.</span>
             </p>
-            {help && (
-              <p className="help-text">
-                Drag to rotate. Move your pointer to turn the head. Choose a PNG
-                skin using Choose New Skin.
-              </p>
-            )}
-            {isCustom && (
-              <button
-                className="choose-skin minecraft-button"
-                disabled={!runtime || busy}
-                onClick={() => pngInput.current?.click()}
-              >
-                Choose New Skin
-              </button>
-            )}
-            {isCustom && (
-              <button
-                className="help-button minecraft-button"
-                aria-label="Skin help"
-                aria-expanded={help}
-                onClick={() => setHelp(!help)}
-              >
-                <svg
-                  viewBox="0 0 16 20"
-                  aria-hidden="true"
-                  shapeRendering="crispEdges"
-                >
-                  <path
-                    fill="#111"
-                    d="M5 0h6v2h2v2h2v8h-2v3h-2v5H5v-5H3v-3H1V4h2V2h2z"
-                  />
-                  <path fill="#fff" d="M5 2h6v2h2v7h-2v3H5v-3H3V4h2z" />
-                  <path fill="#fff05b" d="M7 3h3v4H7v7H5V5h2z" />
-                  <path fill="#536ca1" d="M10 4h2v7h-2z" />
-                  <path fill="#aaa" d="M7 15h2v3H7z" />
-                </svg>
-              </button>
-            )}
+            {isCustom && <button
+              className="choose-skin minecraft-button"
+              disabled={!runtime || busy}
+              onClick={() => pngInput.current?.click()}
+            >Choose New Skin</button>}
           </div>
+
         </section>
       </section>
       <input

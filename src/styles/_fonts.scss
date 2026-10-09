@@ -6,3 +6,11 @@
   font-family: MCHeader;
   src: url(/fonts/MinecraftHeader.ttf);
 }
+
+@font-face {
+  font-family: NotoSans;
+  src: url(/fonts/NotoSans-Regular.woff2) format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}

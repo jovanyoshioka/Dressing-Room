@@ -63,7 +63,7 @@ export async function createRuntime(): Promise<StudioRuntime> {
     const [, builtins] = await Promise.all([
       library.load(),
       Promise.all(
-        ["elemental_knights", "default", "my_skin_pack"].map(async (name) => {
+        ["my_skin_pack", "elemental_knights"].map(async (name) => {
           const r = await fetch(
             `${import.meta.env.BASE_URL}assets/skin-packs/${name}.mcpack`,
           );
@@ -86,7 +86,8 @@ export async function createRuntime(): Promise<StudioRuntime> {
         "classic",
       ),
     );
-    gray.name = "Custom Skin";
+    gray.name = "Import Skin";
+    gray.isImportPlaceholder = true;
     for (const [name, id] of [["Steve", "player"]]) {
       const skin = [...catalog.skins.values()].find((s) => s.name === name)!,
         character = await factory.create({ id }, skin);

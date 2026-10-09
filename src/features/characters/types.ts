@@ -50,6 +50,7 @@ export interface PackDefinition {
 }
 
 export interface SkinDefinition {
+  isImportPlaceholder?: boolean;
   id: string;
   name: string;
   packId: string | null;
@@ -143,10 +144,5 @@ export interface StudioRuntime {
   dispose: () => void;
 }
 
-export type ReviewRequest =
-  | { roots: string[]; result?: never; conflict?: never }
-  | { roots?: never; result: PackImportResult; conflict: boolean };
-
-export type ReviewResponse = string | true | null;
 
 export type ErrorHandler = (error: unknown) => void;
