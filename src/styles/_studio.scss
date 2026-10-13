@@ -636,3 +636,28 @@ select:focus-visible {
   border: var(--skin-border-width) solid #8df1ff;
   outline: none;
 }
+
+// Emotes share the Classic Skins catalog, tile interaction, and information shell.
+.emote-panel .catalog-heading { margin-bottom: 12px; }
+.emote-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+.emote-grid .emote-tile {
+  aspect-ratio: 1;
+  background: #555;
+  border: var(--skin-border-width) solid;
+  border-color: #777 #373737 #373737 #777;
+}
+.emote-grid .emote-tile.selected { border-color: #10a101; }
+.emote-grid .emote-tile:hover, .emote-grid .emote-tile:focus-visible { border-color: #8df1ff; outline: none; }
+@media (max-width: 768px) {
+  .emote-grid { gap: 3px; }
+}
+
+// Match the Classic Skins sizing reference; the emote description overlays it.
+.emote-description { position: absolute; top: 18px; left: 18px; right: 18px; font-family: NotoSans, "Segoe UI", sans-serif; }
+@media (max-width: 768px) {
+  .emote-description { top: 7px; left: 7px; right: 7px; }
+}

@@ -69,6 +69,64 @@ export class ThumbnailRenderer {
     );
     return task;
   }
+  emote(id: string): Promise<string> {
+    const key = `emote:${id}`;
+    const known = this.cache.get(key);
+    if (known) return Promise.resolve(known[0]);
+    const task = this.pending.then(async () => {
+      if (this.disposed) return "";
+      const skin = [...this.runtime.catalog.skins.values()].find((skin) => skin.isImportPlaceholder)!;
+      const character = await this.runtime.factory.create({ id: "emote-thumbnail" }, skin);
+      if (this.disposed) { this.runtime.factory.dispose(character); return ""; }
+      character.model.rotation.y = id === "animation.spin-jump" ? THREE.MathUtils.degToRad(15) : -0.45;
+      const mixer = new THREE.AnimationMixer(character.model);
+      const clip = this.runtime.library.get(id).clip;
+      mixer.clipAction(clip).play();
+      const previewTimes: Record<string, number> = {
+        "animation.jump": clip.duration * 0.4,
+        "animation.wave": clip.duration * 0.3,
+        "animation.clap": 0.8,
+        "animation.spin-jump": 1.25,
+        "animation.head-spin": 1.7,
+      };
+      mixer.update(previewTimes[id] ?? clip.duration * 0.3);
+      // Keep Helicopter's extended-arm pose while fixing its icon to a clear 15-degree view.
+      if (id === "animation.spin-jump") character.model.getObjectByName("root")!.quaternion.identity();
+      // Square camera bounds preserve the model proportions in a square tile.
+      // Fit the posed Import Skin model, including its head and extended limbs.
+      character.model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(character.model);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 30);
+      camera.position.copy(center).add(new THREE.Vector3(0, 1.7, 6));
+      camera.lookAt(center);
+      camera.updateMatrixWorld(true);
+      const projected = new THREE.Box3();
+      for (const x of [bounds.min.x, bounds.max.x])
+        for (const y of [bounds.min.y, bounds.max.y])
+          for (const z of [bounds.min.z, bounds.max.z])
+            projected.expandByPoint(new THREE.Vector3(x, y, z).applyMatrix4(camera.matrixWorldInverse));
+      const halfSize = Math.max(projected.max.x, -projected.min.x, projected.max.y, -projected.min.y) * 1.12;
+      camera.left = camera.bottom = -halfSize;
+      camera.right = camera.top = halfSize;
+      camera.updateProjectionMatrix();
+      this.scene.add(character.model);
+      try {
+        this.renderer.setSize(240, 240);
+        this.renderer.render(this.scene, camera);
+        const image = this.renderer.domElement.toDataURL("image/png");
+        this.cache.set(key, [image]);
+        return image;
+      } finally {
+        this.scene.remove(character.model);
+        mixer.stopAllAction(); mixer.uncacheRoot(character.model);
+        this.runtime.factory.dispose(character);
+        this.renderer.setSize(180, 350);
+      }
+    });
+    this.pending = task.then(() => {}, () => {});
+    return task;
+  }
   /** Draw continuously into the hovered tile; no encoded frame sequence or React updates. */
   animate(
     skin: SkinDefinition,

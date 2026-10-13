@@ -1,0 +1,6 @@
+{
+  "id": "animation.head-spin",
+  "name": "Spooky",
+  "asset": "assets/animations/head-spin.glb",
+  "additive": true
+}

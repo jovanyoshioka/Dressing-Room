@@ -105,6 +105,8 @@ export interface CharacterInstance {
 }
 
 export interface AnimationDefinition {
+  additive?: boolean;
+  bodyClips?: Partial<Record<BodyType, THREE.AnimationClip>>;
   id: string;
   name: string;
   asset: string;

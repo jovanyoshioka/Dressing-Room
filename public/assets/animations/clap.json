@@ -1,0 +1,6 @@
+{
+  "id": "animation.clap",
+  "name": "Clap",
+  "asset": "assets/animations/clap.glb",
+  "slimAsset": "assets/animations/clap-slim.glb"
+}

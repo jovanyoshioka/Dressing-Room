@@ -94,7 +94,7 @@ export async function createRuntime(): Promise<StudioRuntime> {
       const view: CharacterView = {
         character,
         autoRotate: false,
-        angle: 0,
+        angle: THREE.MathUtils.degToRad(-15),
         changing: false,
         change: async () => {},
       };

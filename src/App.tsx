@@ -11,9 +11,11 @@ import React, {
   useCallback,
 } from "react";
 import { createRuntime } from "./features/characters/runtime";
+import { EmoteTile } from "./features/characters/components/EmoteTile";
 import { SkinTile } from "./features/characters/components/SkinTile";
 import { PlayerPreview } from "./features/characters/components/PlayerPreview";
 import { ThumbnailRenderer } from "./features/characters/previews/ThumbnailRenderer";
+import { ENVIRONMENTS, backdropUrl, preloadBackdrops } from "./features/characters/previews/BackdropPreloader";
 
 export function App() {
   // --- Application State ---
@@ -26,11 +28,18 @@ export function App() {
   // --- UI State ---
   const [packId, setPackId] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
-  const [tab] = useState(2);
+  const [tab, setTab] = useState(2);
+  const [selectedEmote, setSelectedEmote] = useState<string | null>(null);
+  const ownedEmotes = ["animation.jump", "animation.wave"];
   const [expanded, setExpanded] = useState(false);
   const [thumbnails, setThumbnails] = useState<ThumbnailRenderer | null>(null);
   const [envIndex, setEnvIndex] = useState(0);
-  const envs = ["overworld", "sift", "cave", "nether", "end", "none"];
+  const envs = ENVIRONMENTS;
+
+  useEffect(() => {
+    if (!runtime) return;
+    return preloadBackdrops(import.meta.env.BASE_URL);
+  }, [runtime]);
 
   // --- DOM References ---
   const pngInput = useRef<HTMLInputElement>(null);
@@ -145,7 +154,7 @@ export function App() {
 
   useEffect(() => {
     skinPanel.current?.scrollTo(0, 0);
-  }, [packId]);
+  }, [packId, tab]);
 
   useEffect(() => {
     if (!message.text || message.error) return;
@@ -234,10 +243,19 @@ export function App() {
         onError={onError}
       />
     );
+  const emoteTile = (id: string, owned: boolean) => runtime && thumbnails && (
+    <EmoteTile key={id} id={id} name={runtime.library.get(id).name} owned={owned} locked={!owned}
+      renderer={thumbnails} selected={selectedEmote === id} onError={onError}
+      onSelect={() => {
+        if (!player) return;
+        setSelectedEmote(id);
+        void runtime.animations.play(player.character, id).catch(onError);
+      }} />
+  );
   return (
     <main
       ref={room}
-      className={`dressing-room ${expanded ? "preview-expanded" : ""}`}
+      className={`dressing-room ${tab === 3 ? "emotes-view" : ""} ${expanded ? "preview-expanded" : ""}`}
     >
       {menu && <button className="navigation-backdrop" aria-label="Close navigation" tabIndex={-1}
         onClick={() => { setMenu(false); menuButton.current?.focus(); }} />}
@@ -262,8 +280,11 @@ export function App() {
               aria-label={name}
               aria-pressed={tab === i}
               aria-current={tab === i ? "page" : undefined}
-              disabled={tab !== i}
-              onClick={() => { setMenu(false); menuButton.current?.focus(); }}
+              disabled={i !== 2 && i !== 3}
+              onClick={() => {
+                if (runtime) runtime.animations.stop(runtime.views[0].character);
+                setTab(i); setSelectedEmote(null); setPackId(null); setMenu(false); menuButton.current?.focus();
+              }}
             >
               <img
                 className="tab-icon"
@@ -276,8 +297,21 @@ export function App() {
         )}
         {menu && <button className="marketplace-button" disabled>Go to Marketplace</button>}
       </nav>
-      <section ref={skinPanel} className="skin-panel" aria-label="Skin packs" inert={menu}>
-        {openPack ? (
+      <section ref={skinPanel} className={`skin-panel ${tab === 3 ? "emote-panel" : ""}`} aria-label={tab === 3 ? "Emotes" : "Skin packs"} inert={menu}>
+        {tab === 3 ? (
+          <div className="pack-rows">
+            <section className="catalog-section" aria-label="Owned Emotes">
+              <h2 className="catalog-heading">Owned Emotes</h2>
+              <div className="emote-grid owned-emotes">
+                {ownedEmotes.map((id) => emoteTile(id, true))}
+              </div>
+            </section>
+            <section className="catalog-section" aria-label="Get More">
+              <h2 className="catalog-heading">Get More</h2>
+              <div className="emote-grid">{runtime && ["animation.clap", "animation.spin-jump", "animation.head-spin"].filter((id) => !ownedEmotes.includes(id)).map((id) => emoteTile(id, false))}</div>
+            </section>
+          </div>
+        ) : openPack ? (
           <>
             <button
               className="pack-back"
@@ -327,7 +361,7 @@ export function App() {
             style={
               envs[envIndex] !== "none"
                 ? {
-                    backgroundImage: `url(${import.meta.env.BASE_URL}assets/environments/${envs[envIndex]}.png)`,
+                    backgroundImage: `url(${backdropUrl(import.meta.env.BASE_URL, envs[envIndex])})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center center",
                     backgroundColor: "transparent",
@@ -364,8 +398,18 @@ export function App() {
         </div>
         <section
           className="skin-information"
-          aria-label="Selected skin information"
+          aria-label={tab === 3 ? "Selected emote information" : "Selected skin information"}
         >
+          {tab === 3 ? <>
+            <header><h1>{selectedEmote ? runtime?.library.get(selectedEmote).name : "Getting Started"}</h1></header>
+            <div className="information-content">
+              <p className="information-spacer" aria-hidden="true">
+                <img src={`${import.meta.env.BASE_URL}assets/ui/light-bulb.svg`} alt="" />
+                <span>Import a png (64x32, 64x64, or 128x128) from your device to use as your skin. This will not sync between devices or games.</span>
+              </p>
+              <p className="emote-description">{selectedEmote ? "" : "Select items on the left to see how they look on your character!"}</p>
+            </div>
+          </> : <>
           <header>
             <h1 title={player?.character.skin.name}>{player?.character.skin.name}</h1>
             {!isCustom && <span>{groups.find((p) => p.skins.some((s) => s.id === player?.character.skin.id))?.name}</span>}
@@ -381,7 +425,7 @@ export function App() {
               onClick={() => pngInput.current?.click()}
             >Choose New Skin</button>}
           </div>
-
+          </>}
         </section>
       </section>
       <input

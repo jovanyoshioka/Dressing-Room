@@ -1,7 +1,9 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
+import { animationBounds, animationCameraDistance } from "../animations/AnimationFraming";
+import { updateHeadTracking } from "../previews/HeadTracking";
 import type { StudioRuntime, CharacterView } from "../types";
 
 function Player({
@@ -15,7 +17,16 @@ function Player({
 }) {
   const group = useRef<THREE.Group>(null),
     target = useRef(new THREE.Vector2()),
+    framing = useRef<{ bounds: THREE.Box3 | null; aspect: number; distance: number }>({ bounds: null, aspect: 0, distance: 5.4 }),
     { camera, gl, scene } = useThree();
+
+  const jumpBounds = useMemo(
+    () => new Map(["animation.jump", "animation.spin-jump"].map((id) => {
+      const animation = runtime.library.get(id);
+      return [animation.name, animationBounds(view.character.model, animation.clip)];
+    })),
+    [runtime, view.character],
+  );
 
   useEffect(() => {
     camera.lookAt(0, 1, 0);
@@ -71,17 +82,20 @@ function Player({
   useFrame((_, delta) => {
     if (group.current) group.current.rotation.y = view.angle;
     const head = view.character.model.getObjectByName("head")!;
-    const q = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(
-        tracking ? target.current.y * 0.28 : 0,
-        tracking ? target.current.x * 0.55 : 0,
-        0,
-        "YXZ",
-      ),
-    );
-    head.quaternion.slerp(q, 1 - Math.exp(-delta * 12));
-    // Keep animations idle in this dressing-room view.
-    runtime.animations.status(view.character);
+    const activeBounds = jumpBounds.get(runtime.animations.status(view.character).name);
+    const playingJump = !!activeBounds;
+    if (camera instanceof THREE.PerspectiveCamera) {
+      if (playingJump && (framing.current.bounds !== activeBounds || framing.current.aspect !== camera.aspect)) {
+        framing.current = { bounds: activeBounds!, aspect: camera.aspect, distance: animationCameraDistance(camera, activeBounds!) };
+      }
+      const distance = playingJump ? framing.current.distance : 5.4;
+      // The anticipation at the start of Jump gives the camera time to pull back.
+      camera.position.z = THREE.MathUtils.damp(camera.position.z, distance, playingJump ? 16 : 8, delta);
+      if (Math.abs(camera.position.z - distance) < 0.001) camera.position.z = distance;
+      camera.lookAt(0, 1, 0);
+    }
+    runtime.animations.update(view.character, delta);
+    updateHeadTracking(head, target.current, delta, tracking, runtime.animations.status(view.character).busy);
   });
 
   return (
