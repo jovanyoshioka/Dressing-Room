@@ -9,8 +9,13 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useReducer,
 } from "react";
 import { createRuntime } from "./features/characters/runtime";
+import { requestedSkinPack, isSkinPackLocked, initialPackNavigation, packNavigationReducer, packEntryOrigin, marketplaceUrl, catalogLocation } from "./features/characters/skins/PackNavigation";
+import { skinPackPrice, emotePrice } from "./features/characters/skins/CatalogPricing";
+import { GetThisButton } from "./features/characters/components/GetThisButton";
+import { PackViewControls } from "./features/characters/components/PackViewControls";
 import { EmoteTile } from "./features/characters/components/EmoteTile";
 import { SkinTile } from "./features/characters/components/SkinTile";
 import { PlayerPreview } from "./features/characters/components/PlayerPreview";
@@ -26,9 +31,9 @@ export function App() {
   const [busy, setBusy] = useState(false);
 
   // --- UI State ---
-  const [packId, setPackId] = useState<string | null>(null);
+  const [packNavigation, navigatePack] = useReducer(packNavigationReducer, initialPackNavigation);
+  const { packId, tab, origin } = packNavigation;
   const [menu, setMenu] = useState(false);
-  const [tab, setTab] = useState(2);
   const [selectedEmote, setSelectedEmote] = useState<string | null>(null);
   const ownedEmotes = ["animation.jump", "animation.wave"];
   const [expanded, setExpanded] = useState(false);
@@ -44,6 +49,8 @@ export function App() {
   // --- DOM References ---
   const pngInput = useRef<HTMLInputElement>(null);
   const skinPanel = useRef<HTMLElement>(null);
+  const panelScroll = useRef(new Map<string, number>());
+  const panelKey = tab === 3 ? "emotes" : packId ?? "catalog";
   const room = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
@@ -71,6 +78,10 @@ export function App() {
   const mounted = useRef(true);
   const navigation = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
+  const returnToCatalog = useCallback(() => {
+    navigatePack({ type: "catalog" });
+    window.history.replaceState(window.history.state, "", catalogLocation(window.location.href));
+  }, []);
 
   const notify = useCallback((text: string, error = false) => {
     if (mounted.current) setMessage({ text, error });
@@ -89,13 +100,20 @@ export function App() {
       created: StudioRuntime | undefined;
     mounted.current = true;
     createRuntime()
-      .then((r) => {
+      .then(async (r) => {
         created = r;
         if (!active) {
           r.dispose();
           return;
         }
 
+        const requestedPack = requestedSkinPack(r.catalog.packs.values(), window.location.search);
+        if (requestedPack) {
+          const firstSkin = [...r.catalog.skins.values()].find((skin) => skin.packId === requestedPack.id);
+          if (firstSkin) await r.views[0].change(firstSkin);
+          if (!active) return;
+          navigatePack({ type: "open", packId: requestedPack.id, origin: packEntryOrigin(window.location.search) });
+        }
         r.onChange = () => refresh((n) => n + 1);
         setRuntime(r);
         setLoading("");
@@ -142,7 +160,7 @@ export function App() {
           menuButton.current?.focus();
           return;
         }
-        setPackId(null);
+        if (tab === 2 && packId) returnToCatalog();
         setExpanded(false);
         setMenu(false);
       }
@@ -150,11 +168,11 @@ export function App() {
 
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [menu]);
+  }, [menu, packId, tab, returnToCatalog]);
 
-  useEffect(() => {
-    skinPanel.current?.scrollTo(0, 0);
-  }, [packId, tab]);
+  useLayoutEffect(() => {
+    if (skinPanel.current) skinPanel.current.scrollTop = panelScroll.current.get(panelKey) ?? 0;
+  }, [panelKey, runtime]);
 
   useEffect(() => {
     if (!message.text || message.error) return;
@@ -185,7 +203,7 @@ export function App() {
       const skin = runtime.catalog.addPNG(await runtime.importer.png(file, "classic"));
       runtime.onChange();
       await selectSkin(skin);
-      setPackId(null);
+      returnToCatalog();
       notify(`Imported ${skin.name}.`);
     } catch (error) {
       onError(error);
@@ -221,20 +239,23 @@ export function App() {
     ...packs.map((p) => ({
       id: p.id,
       name: p.name,
-      owned: p.sourceMetadata.serialize_name !== "elemental_knights",
+      owned: !isSkinPackLocked(p),
       skins: skins.filter((s) => s.packId === p.id),
     })),
   ];
   const openPack = groups.find((p) => p.id === packId);
   const isCustom = player?.character.skin.packId === null;
   const isImport = player?.character.skin.isImportPlaceholder === true;
+  const selectedPrice = tab === 3
+    ? emotePrice(selectedEmote, ownedEmotes)
+    : skinPackPrice(packs.find((pack) => pack.id === player?.character.skin.packId));
 
   const tile = (skin: SkinDefinition) =>
     thumbnails && (
       <SkinTile
         key={skin.id}
         skin={skin}
-        locked={packs.find((p) => p.id === skin.packId)?.sourceMetadata.serialize_name === "elemental_knights"}
+        locked={isSkinPackLocked(packs.find((p) => p.id === skin.packId))}
         renderer={thumbnails}
         selected={player?.character.skin.id === skin.id}
         onSelect={() => {
@@ -283,7 +304,7 @@ export function App() {
               disabled={i !== 2 && i !== 3}
               onClick={() => {
                 if (runtime) runtime.animations.stop(runtime.views[0].character);
-                setTab(i); setSelectedEmote(null); setPackId(null); setMenu(false); menuButton.current?.focus();
+                navigatePack({ type: "tab", tab: i }); setSelectedEmote(null); setMenu(false); menuButton.current?.focus();
               }}
             >
               <img
@@ -295,9 +316,10 @@ export function App() {
             </button>
           ),
         )}
-        {menu && <button className="marketplace-button" disabled>Go to Marketplace</button>}
+        {menu && <button className="marketplace-button" type="button" onClick={() => window.location.assign(marketplaceUrl(import.meta.env.BASE_URL))}>Go to Marketplace</button>}
       </nav>
-      <section ref={skinPanel} className={`skin-panel ${tab === 3 ? "emote-panel" : ""}`} aria-label={tab === 3 ? "Emotes" : "Skin packs"} inert={menu}>
+      <section ref={skinPanel} className={`skin-panel ${tab === 3 ? "emote-panel" : ""}`} aria-label={tab === 3 ? "Emotes" : "Skin packs"} inert={menu}
+        onScroll={(event) => panelScroll.current.set(panelKey, event.currentTarget.scrollTop)}>
         {tab === 3 ? (
           <div className="pack-rows">
             <section className="catalog-section" aria-label="Owned Emotes">
@@ -313,13 +335,8 @@ export function App() {
           </div>
         ) : openPack ? (
           <>
-            <button
-              className="pack-back"
-              onClick={() => setPackId(null)}
-              aria-label="Back to all skin packs"
-            >
-              ← {openPack.name}
-            </button>
+            <PackViewControls origin={origin} onCatalog={returnToCatalog}
+              onMarketplace={() => window.location.assign(marketplaceUrl(import.meta.env.BASE_URL))} />
             <div className="skin-grid" aria-label={openPack.name}>
               {openPack.skins.map(tile)}
             </div>
@@ -336,7 +353,7 @@ export function App() {
                       {pack.skins.slice(0, pack.id === "custom" ? 4 : 5).map(tile)}
                       {pack.skins.length > (pack.id === "custom" ? 4 : 5) && (
                         <button className="overflow-tile" aria-label={`Show all ${pack.name} skins`}
-                          onClick={() => setPackId(pack.id)}>
+                          onClick={() => navigatePack({ type: "open", packId: pack.id, origin: "catalog" })}>
                           <span>+{pack.skins.length - (pack.id === "custom" ? 4 : 5)}</span>
                         </button>
                       )}
@@ -426,6 +443,7 @@ export function App() {
             >Choose New Skin</button>}
           </div>
           </>}
+          <GetThisButton price={selectedPrice} />
         </section>
       </section>
       <input

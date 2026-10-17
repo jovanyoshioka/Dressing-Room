@@ -63,7 +63,7 @@ export async function createRuntime(): Promise<StudioRuntime> {
     const [, builtins] = await Promise.all([
       library.load(),
       Promise.all(
-        ["my_skin_pack", "elemental_knights"].map(async (name) => {
+        ["my_skin_pack", "elemental_knights", "dungeons_ii_hero"].map(async (name) => {
           const r = await fetch(
             `${import.meta.env.BASE_URL}assets/skin-packs/${name}.mcpack`,
           );
