@@ -18,8 +18,8 @@ export class SkinCatalog {
     result: PackImportResult,
     { replace = false }: { replace?: boolean } = {},
   ) {
-    const { pack, skins } = result,
-      previous = this.packs.get(pack.id);
+    const { pack, skins } = result;
+    const previous = this.packs.get(pack.id);
     if (
       previous &&
       previous.version.join(".") === pack.version.join(".") &&

@@ -28,8 +28,8 @@ export class CharacterFactory {
     skin: SkinDefinition,
   ): Promise<CharacterInstance> {
     const bodyType = definition.bodyOverride || skin.bodyType;
-    const model = (await this.models.load(bodyType)).clone(true),
-      materials: THREE.MeshStandardMaterial[] = [];
+    const model = (await this.models.load(bodyType)).clone(true);
+    const materials: THREE.MeshStandardMaterial[] = [];
     model.traverse((n) => {
       if (n instanceof THREE.Mesh) {
         if (!(n.material instanceof THREE.MeshStandardMaterial))
@@ -60,8 +60,8 @@ export class CharacterFactory {
   }
 
   applySkin(character: CharacterInstance, skin: SkinDefinition) {
-    const result = this.normalizer.normalize(skin, character.bodyType),
-      texture = new THREE.CanvasTexture(result.canvas);
+    const result = this.normalizer.normalize(skin, character.bodyType);
+    const texture = new THREE.CanvasTexture(result.canvas);
     texture.flipY = false;
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.minFilter = texture.magFilter = THREE.NearestFilter;

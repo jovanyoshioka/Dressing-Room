@@ -89,8 +89,9 @@ export async function createRuntime(): Promise<StudioRuntime> {
     gray.name = "Import Skin";
     gray.isImportPlaceholder = true;
     for (const [name, id] of [["Steve", "player"]]) {
-      const skin = [...catalog.skins.values()].find((s) => s.name === name)!,
-        character = await factory.create({ id }, skin);
+      const skin = [...catalog.skins.values()].find((s) => s.name === name)!;
+      const character = await factory.create({ id }, skin);
+
       const view: CharacterView = {
         character,
         autoRotate: false,

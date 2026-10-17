@@ -45,12 +45,19 @@ export class AnimationManager {
 
   play(character: CharacterInstance, id: string) {
     this.library.get(id);
-    const state = this.state(character),
-      duration = state.active ? 0.12 : 0.25,
-      head = character.model.getObjectByName("head")!.quaternion.toArray(),
-      snapshot = state.active ? this.snapshot(character) : new THREE.AnimationClip("idle-head-transition", duration, [
-        new THREE.QuaternionKeyframeTrack("head.quaternion", [0, duration], [...head, ...head]),
-      ]);
+
+    const state = this.state(character);
+    const duration = state.active ? 0.12 : 0.25;
+    const head = character.model.getObjectByName("head")!.quaternion.toArray();
+    const snapshot = state.active
+      ? this.snapshot(character)
+      : new THREE.AnimationClip("idle-head-transition", duration, [
+          new THREE.QuaternionKeyframeTrack("head.quaternion", [0, duration], [
+            ...head,
+            ...head,
+          ]),
+        ]);
+
     this.stop(character);
     const completion = this.start(character, id);
     if (snapshot) {
@@ -93,9 +100,13 @@ export class AnimationManager {
   start(character: CharacterInstance, id: string) {
     // Idle mouse tracking must not become the base pose for an additive emote.
     character.model.getObjectByName("head")!.quaternion.identity();
-    const animation = this.library.get(id),
-      s = this.state(character),
-      action = s.mixer.clipAction(animation.bodyClips?.[character.bodyType] ?? animation.clip);
+
+    const animation = this.library.get(id);
+    const s = this.state(character);
+    const action = s.mixer.clipAction(
+      animation.bodyClips?.[character.bodyType] ?? animation.clip,
+    );
+
     action.reset();
     action.setLoop(THREE.LoopOnce, 1);
     action.clampWhenFinished = false;
@@ -103,6 +114,7 @@ export class AnimationManager {
     s.paused = false;
     s.mixer.timeScale = 1;
     s.status = animation.name;
+
     return new Promise<boolean>((resolve) => {
       const finish = (event: THREE.AnimationMixerEventMap["finished"]) => {
         if (event.action !== action) return;
@@ -125,8 +137,10 @@ export class AnimationManager {
   async playSequence(character: CharacterInstance, ids: string[]) {
     ids.forEach((id) => this.library.get(id));
     this.stop(character);
-    const s = this.state(character),
-      token = s.token;
+
+    const s = this.state(character);
+    const token = s.token;
+
     for (const id of ids) {
       if (s.token !== token) return false;
       if (!(await this.start(character, id))) return false;

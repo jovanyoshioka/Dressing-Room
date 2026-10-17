@@ -32,8 +32,8 @@ function copyRect(
   dest: Rect,
   mirror = false,
 ) {
-  const [sx, sy, sw, sh] = src,
-    [dx, dy, dw, dh] = dest;
+  const [sx, sy, sw, sh] = src;
+  const [dx, dy, dw, dh] = dest;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   if (mirror) {
@@ -60,10 +60,11 @@ function normalizeSkin(
   )
     throw new Error("Unknown arm layout.");
   // UVs use a 64-unit atlas; preserve native texels at higher resolution.
-  const size = image.width,
-    scale = size / 64;
-  const c = skinCanvas(size),
-    ctx = c.getContext("2d", { willReadFrequently: true })!;
+  const size = image.width;
+  const scale = size / 64;
+
+  const c = skinCanvas(size);
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
   ctx.imageSmoothingEnabled = false;
   ctx.scale(scale, scale);
   ctx.drawImage(image, 0, 0, 64, image.height / scale);
@@ -91,14 +92,16 @@ function normalizeSkin(
         [16, 48],
       ],
     ]) {
-      const src = atlasRects(srcOrigin[0], srcOrigin[1], 4, 12, 4),
-        dest = atlasRects(destOrigin[0], destOrigin[1], 4, 12, 4);
+      const src = atlasRects(srcOrigin[0], srcOrigin[1], 4, 12, 4);
+      const dest = atlasRects(destOrigin[0], destOrigin[1], 4, 12, 4);
+
       // Front/back/top/bottom mirror; physical left/right side faces exchange.
       [0, 1, 3, 2, 4, 5].forEach((face, i) =>
         copyRect(ctx, image, src[face], dest[i], true),
       );
     }
   }
+
   // Minecraft base skin faces are opaque; overlay transparency is retained.
   const pixels = ctx.getImageData(0, 0, size, size);
   for (const [u, v, w, h, d] of [
@@ -119,16 +122,18 @@ function normalizeSkin(
   if (sourceType !== targetType) {
     const snapshot = skinCanvas(size);
     snapshot.getContext("2d")!.drawImage(c, 0, 0);
-    const from = sourceType === "slim" ? 3 : 4,
-      to = targetType === "slim" ? 3 : 4;
+
+    const from = sourceType === "slim" ? 3 : 4;
+    const to = targetType === "slim" ? 3 : 4;
+
     for (const origin of [
       [40, 16],
       [32, 48],
       [40, 32],
       [48, 48],
     ]) {
-      const src = atlasRects(origin[0], origin[1], from, 12, 4),
-        dest = atlasRects(origin[0], origin[1], to, 12, 4);
+      const src = atlasRects(origin[0], origin[1], from, 12, 4);
+      const dest = atlasRects(origin[0], origin[1], to, 12, 4);
       ctx.clearRect(origin[0], origin[1], 16, 16);
       src.forEach((rect, i) =>
         copyRect(ctx, snapshot, rect.map((n) => n * scale) as Rect, dest[i]),

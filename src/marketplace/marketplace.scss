@@ -1,143 +1,697 @@
-@font-face { font-family: MarketSans; src: url('/fonts/NotoSans-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: MarketTen; src: url('/fonts/MinecraftHeader.ttf') format('truetype'); font-display: swap; }
-@font-face { font-family: MarketPixel; src: url('/fonts/MinecraftRegular.otf') format('opentype'); font-display: swap; }
+@font-face {
+  font-family: MarketSans;
+  src: url('/fonts/NotoSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
 
-* { box-sizing: border-box; }
-html, body, #root { margin: 0; min-height: 100%; }
-body { background: #171615; }
+@font-face {
+  font-family: MarketTen;
+  src: url('/fonts/MinecraftHeader.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: MarketPixel;
+  src: url('/fonts/MinecraftRegular.otf') format('opentype');
+  font-display: swap;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: #171615;
+}
+
 .marketplace-page {
-  min-height: 100vh; color: white; background: #171615; font-family: MarketSans, Arial, sans-serif;
-  border: solid #3d3b3a; border-width: 2px 0 0 3px; border-radius: 14px 0 0; overflow: hidden;
-  button { appearance: none; border: 0; border-radius: 0; padding: 0; background: none; color: inherit; font: inherit; opacity: 1; }
-  button:disabled { cursor: not-allowed; opacity: 1; -webkit-text-fill-color: currentColor; }
-  .market-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }
-  .minecoin { display: inline-block; width: 25px; height: 25px; image-rendering: pixelated; flex: 0 0 auto; }
+  min-height: 100vh;
+  color: white;
+  background: #171615;
+  font-family: MarketSans, Arial, sans-serif;
+  border: solid #3d3b3a;
+  border-width: 2px 0 0 3px;
+  border-radius: 14px 0 0;
+  overflow: hidden;
+
+  button {
+    appearance: none;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    opacity: 1;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 1;
+    -webkit-text-fill-color: currentColor;
+  }
+
+  .market-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+    vertical-align: middle;
+  }
+
+  .minecoin {
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+    image-rendering: pixelated;
+    flex: 0 0 auto;
+  }
 }
+
 .market-header {
-  height: 96px; position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center;
-  padding: 0 3.67%; background: #262423; box-shadow: 0 3px #11100f; z-index: 1;
-  .brand { display: flex; width: 275px; flex: 0 0 auto; }
-  .brand img { display: block; width: 100%; height: auto; }
+  height: 96px;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  padding: 0 3.67%;
+  background: #262423;
+  box-shadow: 0 3px #11100f;
+  z-index: 1;
+
+  .brand {
+    display: flex;
+    width: 275px;
+    flex: 0 0 auto;
+  }
+
+  .brand img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
 }
+
 .market-nav {
-  justify-self: center; display: flex; justify-content: center; align-items: center; gap: 32px;
-  button { display: flex; align-items: center; gap: 7px; text-transform: uppercase; font-size: 16px; line-height: 24px; font-weight: 700; white-space: nowrap; }
-  .market-icon { width: 16px; height: 16px; }
+  justify-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 32px;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    text-transform: uppercase;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .market-icon {
+    width: 16px;
+    height: 16px;
+  }
 }
-.market-tools { justify-self: end; display: flex; align-items: center; gap: 22px;
-  button { display: flex; align-items: center; text-transform: uppercase; font-size: 16px; font-weight: 700; white-space: nowrap; }
-  .buy-now { border: 2px solid #3c8527; color: #6cc349; height: 45px; padding: 0 15px; gap: 10px; }
-  .buy-now .market-icon { width: 15px; height: 19px; }
-  .search-tool { gap: 16px; }
-  .search-tool .market-icon:first-child { width: 23px; height: 23px; }
-  .search-tool .market-icon:last-child, .account-tool .market-icon:last-child { width: 16px; height: 16px; }
-  .account-tool { gap: 7px; }
-  .account-tool .market-icon:first-child { width: 22px; height: 22px; }
+
+.market-tools {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+
+  button {
+    display: flex;
+    align-items: center;
+    text-transform: uppercase;
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .buy-now {
+    border: 2px solid #3c8527;
+    color: #6cc349;
+    height: 45px;
+    padding: 0 15px;
+    gap: 10px;
+  }
+
+  .buy-now .market-icon {
+    width: 15px;
+    height: 19px;
+  }
+
+  .search-tool {
+    gap: 16px;
+  }
+
+  .search-tool .market-icon:first-child {
+    width: 23px;
+    height: 23px;
+  }
+
+  .search-tool .market-icon:last-child,
+  .account-tool .market-icon:last-child {
+    width: 16px;
+    height: 16px;
+  }
+
+  .account-tool {
+    gap: 7px;
+  }
+
+  .account-tool .market-icon:first-child {
+    width: 22px;
+    height: 22px;
+  }
 }
+
 .marketplace-page .dungeons-promo {
-  display: flex; align-items: center; justify-content: center; width: 100%; min-height: 77px; padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 77px;
+  padding: 12px 20px;
   background: #0b203a url('/assets/marketplace/dungeons-promo-background.png') repeat-x center / auto 100%;
   border-bottom: 2px solid #393633;
-  .promo-copy { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; font-family: MarketSans, Arial, sans-serif; font-size: 18px; line-height: 28px; }
-  strong { color: #ffc42b; text-transform: uppercase; font-weight: 700; letter-spacing: .6px; }
-  .market-icon { width: 16px; height: 20px; color: #ffc42b; }
+
+  .promo-copy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: MarketSans, Arial, sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+  }
+
+  strong {
+    color: #ffc42b;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: .6px;
+  }
+
+  .market-icon {
+    width: 16px;
+    height: 20px;
+    color: #ffc42b;
+  }
 }
-.market-main { padding: 0 3.37% 60px 3.67%; }
-.market-toolbar { display: flex; justify-content: space-between; align-items: flex-start; min-height: 80px; padding-top: 10px; gap: 20px; }
-.market-breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding-top: 6px; text-transform: uppercase; font-size: 18px; letter-spacing: .6px; line-height: 28px;
-  > span { display: inline-flex; align-items: center; gap: 16px; }
-  button { font-weight: 700; text-transform: uppercase; text-decoration: underline; text-underline-offset: 2px; }
-  .breadcrumb-separator { color: #a9a5a0; font-size: 23px; line-height: 24px; }
+
+.market-main {
+  padding: 0 3.37% 60px 3.67%;
 }
-.minecoin-wallet { display: flex; align-items: center; flex-shrink: 0; height: 40px; background: #080808; box-shadow: inset 0 -2px #353332, -2px 0 #353332; font-family: MarketPixel, monospace; font-size: 20px;
-  .wallet-label { width: 214px; padding-left: 8px; }
-  .minecoin { width: 25px; height: 25px; margin-right: 7px; }
-  .wallet-balance { font-family: MarketTen, sans-serif; font-size: 25px; min-width: 22px; }
-  .add-minecoins { margin-left: 4px; width: 40px; height: 40px; background: #ffc42b; color: #282318; border-bottom: 3px solid #c79725; font: 36px/34px Arial, sans-serif; }
+
+.market-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-height: 80px;
+  padding-top: 10px;
+  gap: 20px;
 }
+
+.market-breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 6px;
+  text-transform: uppercase;
+  font-size: 18px;
+  letter-spacing: .6px;
+  line-height: 28px;
+
+  > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  button {
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .breadcrumb-separator {
+    color: #a9a5a0;
+    font-size: 23px;
+    line-height: 24px;
+  }
+}
+
+.minecoin-wallet {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 40px;
+  background: #080808;
+  box-shadow: inset 0 -2px #353332, -2px 0 #353332;
+  font-family: MarketPixel, monospace;
+  font-size: 20px;
+
+  .wallet-label {
+    width: 214px;
+    padding-left: 8px;
+  }
+
+  .minecoin {
+    width: 25px;
+    height: 25px;
+    margin-right: 7px;
+  }
+
+  .wallet-balance {
+    font-family: MarketTen, sans-serif;
+    font-size: 25px;
+    min-width: 22px;
+  }
+
+  .add-minecoins {
+    margin-left: 4px;
+    width: 40px;
+    height: 40px;
+    background: #ffc42b;
+    color: #282318;
+    border-bottom: 3px solid #c79725;
+    font: 36px/34px Arial, sans-serif;
+  }
+}
+
 // The pixel font's line box sits below its visible capital glyphs.
 // Align the ink of the labels with the coin rather than just their line boxes.
-.pixel-label { position: relative; top: -.12em; }
-.market-product { display: grid; grid-template-columns: minmax(0, 1.855fr) minmax(0, 1fr); gap: 30px; align-items: center; }
-.pack-art-frame { border: 5px solid; border-color: #000 #000 #292827 #292827; padding: 25px; background: #0e0d0d; }
-.pack-art { display: block; width: 100%; height: auto; }
-.pack-purchase { min-width: 0; }
-.pack-details { border: 5px solid; border-color: #3d3b3a #3d3b3a #000 #000; padding: 24px 25px 21px; background: #312f2e;
-  h1 { font-family: MarketTen, Impact, sans-serif; font-weight: 400; text-transform: uppercase; font-size: 60px; line-height: 62px; margin: 0 0 30px; }
+.pixel-label {
+  position: relative;
+  top: -.12em;
 }
-.pack-byline { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; font-size: 20px; line-height: 28px;
-  .by { color: #a19b95; }
-  .creator-name { text-decoration: underline; text-underline-offset: 3px; }
-  .rating-count { margin-left: 3px; font-size: 18px; }
+
+.market-product {
+  display: grid;
+  grid-template-columns: minmax(0, 1.855fr) minmax(0, 1fr);
+  gap: 30px;
+  align-items: center;
 }
-.pack-rating { display: inline-flex; margin-left: 7px; }
-.rating-stars { display: inline-flex; gap: 4px; }
-.rating-star { position: relative; width: 27px; height: 30px; display: block;
-  .market-icon { width: 27px; height: 30px; }
-  &.half-star { background: #070707; clip-path: polygon(42% 0, 58% 0, 58% 21%, 71% 21%, 71% 33%, 100% 33%, 100% 54%, 83% 54%, 83% 67%, 75% 67%, 75% 100%, 50% 83%, 25% 100%, 25% 67%, 17% 67%, 17% 54%, 0 54%, 0 33%, 29% 33%, 29% 21%, 42% 21%); }
-  &.half-star .market-icon { clip-path: inset(0 50% 0 0); }
+
+.pack-art-frame {
+  border: 5px solid;
+  border-color: #000 #000 #292827 #292827;
+  padding: 25px;
+  background: #0e0d0d;
 }
-.pack-rule { height: 3px; margin: 13px 0 18px; border-top: 2px solid #454341; border-bottom: 1px solid #232221; }
-.skin-count { display: inline-flex; align-items: center; gap: 7px; background: #242221; font-size: 18px; line-height: 40px; height: 40px; padding: 0 9px;
-  .market-icon { width: 20px; height: 23px; }
+
+.pack-art {
+  display: block;
+  width: 100%;
+  height: auto;
 }
-.lower-rule { margin: 18px 0 13px; }
-.pack-price { display: flex; align-items: center; gap: 6px; color: #ffc42b; font-family: MarketTen, Impact, sans-serif; text-transform: uppercase; font-size: 36px; line-height: 40px; text-shadow: 2px 2px #000;
-  .minecoin { width: 25px; height: 25px; }
+
+.pack-purchase {
+  min-width: 0;
 }
-.marketplace-page .get-pack { margin-top: 22px; width: 100%; height: 64px; display: flex; align-items: center; justify-content: center; gap: 9px; background: #ffc42b; border: 2px solid #635a43; box-shadow: inset 0 6px #ffe181, inset 0 -7px #d99b19; color: #122328; font-size: 24px; line-height: 32px; text-transform: uppercase;
-  .market-icon { margin-left: 9px; width: 18px; height: 21px; }
-  .minecoin { width: 28px; height: 28px; }
+
+.pack-details {
+  border: 5px solid;
+  border-color: #3d3b3a #3d3b3a #000 #000;
+  padding: 24px 25px 21px;
+  background: #312f2e;
+
+  h1 {
+    font-family: MarketTen, Impact, sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: 60px;
+    line-height: 62px;
+    margin: 0 0 30px;
+  }
 }
-.marketplace-page .try-on { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; width: 100%; min-height: 56px; padding: 10px 16px; border: 2px solid #3c8527; background: #3c8527; color: #fff; font-size: 20px; font-weight: 700; text-transform: uppercase; cursor: pointer;
-  .market-icon { width: 16px; height: 20px; }
-  &:hover { background: #327021; }
-  &:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+.pack-byline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 20px;
+  line-height: 28px;
+
+  .by {
+    color: #a19b95;
+  }
+
+  .creator-name {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .rating-count {
+    margin-left: 3px;
+    font-size: 18px;
+  }
 }
+
+.pack-rating {
+  display: inline-flex;
+  margin-left: 7px;
+}
+
+.rating-stars {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.rating-star {
+  position: relative;
+  width: 27px;
+  height: 30px;
+  display: block;
+
+  .market-icon {
+    width: 27px;
+    height: 30px;
+  }
+
+  &.half-star {
+    background: #070707;
+    clip-path: polygon(42% 0, 58% 0, 58% 21%, 71% 21%, 71% 33%, 100% 33%, 100% 54%, 83% 54%, 83% 67%, 75% 67%, 75% 100%, 50% 83%, 25% 100%, 25% 67%, 17% 67%, 17% 54%, 0 54%, 0 33%, 29% 33%, 29% 21%, 42% 21%);
+  }
+
+  &.half-star .market-icon {
+    clip-path: inset(0 50% 0 0);
+  }
+}
+
+.pack-rule {
+  height: 3px;
+  margin: 13px 0 18px;
+  border-top: 2px solid #454341;
+  border-bottom: 1px solid #232221;
+}
+
+.skin-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #242221;
+  font-size: 18px;
+  line-height: 40px;
+  height: 40px;
+  padding: 0 9px;
+
+  .market-icon {
+    width: 20px;
+    height: 23px;
+  }
+}
+
+.lower-rule {
+  margin: 18px 0 13px;
+}
+
+.pack-price {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffc42b;
+  font-family: MarketTen, Impact, sans-serif;
+  text-transform: uppercase;
+  font-size: 36px;
+  line-height: 40px;
+  text-shadow: 2px 2px #000;
+
+  .minecoin {
+    width: 25px;
+    height: 25px;
+  }
+}
+
+.marketplace-page .get-pack {
+  margin-top: 22px;
+  width: 100%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #ffc42b;
+  border: 2px solid #635a43;
+  box-shadow: inset 0 6px #ffe181, inset 0 -7px #d99b19;
+  color: #122328;
+  font-size: 24px;
+  line-height: 32px;
+  text-transform: uppercase;
+
+  .market-icon {
+    margin-left: 9px;
+    width: 18px;
+    height: 21px;
+  }
+
+  .minecoin {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.marketplace-page .try-on {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 16px;
+  border: 2px solid #3c8527;
+  background: #3c8527;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  .market-icon {
+    width: 16px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: #327021;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 4px;
+  }
+}
+
 @media (max-width: 1700px) {
-  .market-header { height: 80px; }
-  .market-header .brand { width: 230px; }
-  .market-nav { gap: 32px; }
-  .market-tools { gap: 15px; }
-  .market-tools button, .market-nav button { font-size: 14px; }
-  .pack-details h1 { font-size: clamp(32px, 2.75vw, 48px); line-height: 1.12; margin-bottom: 24px; }
-  .pack-byline { font-size: 16px; }
-  .rating-star, .rating-star .market-icon { width: 22px; height: 26px; }
-  .market-breadcrumbs { font-size: 15px; gap: 10px; }
-  .market-breadcrumbs > span { gap: 10px; }
-  .minecoin-wallet .wallet-label { width: 145px; }
-  .marketplace-page .dungeons-promo { min-height: 64px; padding: 10px 16px; }
-  .marketplace-page .dungeons-promo .promo-copy { font-size: 16px; line-height: 24px; }
-  .market-toolbar { min-height: 64px; }
+  .market-header {
+    height: 80px;
+  }
+
+  .market-header .brand {
+    width: 230px;
+  }
+
+  .market-nav {
+    gap: 32px;
+  }
+
+  .market-tools {
+    gap: 15px;
+  }
+
+  .market-tools button,
+  .market-nav button {
+    font-size: 14px;
+  }
+
+  .pack-details h1 {
+    font-size: clamp(32px, 2.75vw, 48px);
+    line-height: 1.12;
+    margin-bottom: 24px;
+  }
+
+  .pack-byline {
+    font-size: 16px;
+  }
+
+  .rating-star,
+  .rating-star .market-icon {
+    width: 22px;
+    height: 26px;
+  }
+
+  .market-breadcrumbs {
+    font-size: 15px;
+    gap: 10px;
+  }
+
+  .market-breadcrumbs > span {
+    gap: 10px;
+  }
+
+  .minecoin-wallet .wallet-label {
+    width: 145px;
+  }
+
+  .marketplace-page .dungeons-promo {
+    min-height: 64px;
+    padding: 10px 16px;
+  }
+
+  .marketplace-page .dungeons-promo .promo-copy {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .market-toolbar {
+    min-height: 64px;
+  }
 }
+
 @media (max-width: 1360px) {
-  .market-header { height: auto; min-height: 80px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 16px; padding-bottom: 16px; row-gap: 16px; }
-  .market-nav { grid-column: 1 / -1; grid-row: 2; width: 100%; justify-content: center; }
-  .market-tools { grid-column: 2; grid-row: 1; }
-  .market-toolbar { min-height: 90px; }
-  .current-crumb { flex-basis: 100%; }
-  .market-product { gap: 20px; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
-  .pack-art-frame { padding: 15px; }
-  .pack-details { padding: 20px; }
-  .marketplace-page .get-pack { font-size: 19px; }
+  .market-header {
+    height: auto;
+    min-height: 80px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding-top: 16px;
+    padding-bottom: 16px;
+    row-gap: 16px;
+  }
+
+  .market-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .market-tools {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .market-toolbar {
+    min-height: 90px;
+  }
+
+  .current-crumb {
+    flex-basis: 100%;
+  }
+
+  .market-product {
+    gap: 20px;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+
+  .pack-art-frame {
+    padding: 15px;
+  }
+
+  .pack-details {
+    padding: 20px;
+  }
+
+  .marketplace-page .get-pack {
+    font-size: 19px;
+  }
 }
+
 @media (max-width: 760px) {
-  .marketplace-page { border-radius: 0; border: 0; }
-  .market-header .brand { width: 180px; }
-  .market-tools { gap: 12px; }
-  .market-tools .buy-now { display: none; }
-  .market-tools .account-tool { font-size: 12px; }
-  .market-tools .search-tool { gap: 5px; }
-  .market-nav { gap: 32px; flex-wrap: wrap; }
-  .market-nav button { font-size: 12px; gap: 3px; }
-  .marketplace-page .dungeons-promo { min-height: 60px; }
-  .marketplace-page .dungeons-promo .promo-copy { font-size: 13px; gap: 4px 6px; line-height: 20px; }
-  .market-toolbar { padding: 16px 0; flex-direction: column; gap: 12px; }
-  .market-breadcrumbs { font-size: 12px; line-height: 23px; }
-  .market-breadcrumbs .current-crumb { flex-basis: 100%; }
-  .minecoin-wallet { align-self: flex-end; }
-  .market-product { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-  .pack-art-frame { padding: 10px; }
-  .pack-details h1 { font-size: 38px; }
-  .market-main { padding-bottom: 35px; }
+  .marketplace-page {
+    border-radius: 0;
+    border: 0;
+  }
+
+  .market-header .brand {
+    width: 180px;
+  }
+
+  .market-tools {
+    gap: 12px;
+  }
+
+  .market-tools .buy-now {
+    display: none;
+  }
+
+  .market-tools .account-tool {
+    font-size: 12px;
+  }
+
+  .market-tools .search-tool {
+    gap: 5px;
+  }
+
+  .market-nav {
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .market-nav button {
+    font-size: 12px;
+    gap: 3px;
+  }
+
+  .marketplace-page .dungeons-promo {
+    min-height: 60px;
+  }
+
+  .marketplace-page .dungeons-promo .promo-copy {
+    font-size: 13px;
+    gap: 4px 6px;
+    line-height: 20px;
+  }
+
+  .market-toolbar {
+    padding: 16px 0;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .market-breadcrumbs {
+    font-size: 12px;
+    line-height: 23px;
+  }
+
+  .market-breadcrumbs .current-crumb {
+    flex-basis: 100%;
+  }
+
+  .minecoin-wallet {
+    align-self: flex-end;
+  }
+
+  .market-product {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .pack-art-frame {
+    padding: 10px;
+  }
+
+  .pack-details h1 {
+    font-size: 38px;
+  }
+
+  .market-main {
+    padding-bottom: 35px;
+  }
 }

@@ -8,7 +8,7 @@ declare global {
   }
 }
 declare module "react" {
-  interface InputHTMLAttributes<T> {
+  interface InputHTMLAttributes<_T> {
     webkitdirectory?: string;
   }
 }

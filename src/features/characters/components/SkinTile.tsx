@@ -17,18 +17,21 @@ export function SkinTile({
   onSelect: () => void;
   onError: ErrorHandler;
 }) {
-  const [front, setFront] = useState(""),
-    [hover, setHover] = useState(false);
+  const [front, setFront] = useState("");
+  const [hover, setHover] = useState(false);
+
   const canvas = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     let active = true;
+
     renderer
       .frames(skin)
       .then((f) => {
         if (active) setFront(f[0] || "");
       })
       .catch(onError);
+
     return () => {
       active = false;
     };
@@ -38,6 +41,7 @@ export function SkinTile({
     if (!hover || !canvas.current) return;
     return renderer.animate(skin, canvas.current, onError);
   }, [hover, skin, renderer, onError]);
+
   return (
     <button
       className={`skin-tile ${skin.isImportPlaceholder ? "import-skin" : ""} ${selected ? "selected" : ""}`}
@@ -59,7 +63,14 @@ export function SkinTile({
           style={{ visibility: hover ? "hidden" : "visible" }}
         />
       )}
-      {locked && <img className="skin-lock" src={`${import.meta.env.BASE_URL}assets/ui/lock.svg`} alt="Locked" />}
+
+      {locked && (
+        <img
+          className="skin-lock"
+          src={`${import.meta.env.BASE_URL}assets/ui/lock.svg`}
+          alt="Locked"
+        />
+      )}
       <canvas
         ref={canvas}
         className="hover-preview"

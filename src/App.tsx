@@ -12,79 +12,131 @@ import React, {
   useReducer,
 } from "react";
 import { createRuntime } from "./features/characters/runtime";
-import { requestedSkinPack, isSkinPackLocked, initialPackNavigation, packNavigationReducer, packEntryOrigin, marketplaceUrl, catalogLocation } from "./features/characters/skins/PackNavigation";
-import { skinPackPrice, emotePrice } from "./features/characters/skins/CatalogPricing";
+import {
+  requestedSkinPack,
+  isSkinPackLocked,
+  initialPackNavigation,
+  packNavigationReducer,
+  packEntryOrigin,
+  marketplaceUrl,
+  catalogLocation,
+} from "./features/characters/skins/PackNavigation";
+import {
+  skinPackPrice,
+  emotePrice,
+} from "./features/characters/skins/CatalogPricing";
 import { GetThisButton } from "./features/characters/components/GetThisButton";
 import { PackViewControls } from "./features/characters/components/PackViewControls";
 import { EmoteTile } from "./features/characters/components/EmoteTile";
 import { SkinTile } from "./features/characters/components/SkinTile";
 import { PlayerPreview } from "./features/characters/components/PlayerPreview";
 import { ThumbnailRenderer } from "./features/characters/previews/ThumbnailRenderer";
-import { ENVIRONMENTS, backdropUrl, preloadBackdrops } from "./features/characters/previews/BackdropPreloader";
+import {
+  ENVIRONMENTS,
+  backdropUrl,
+  preloadBackdrops,
+} from "./features/characters/previews/BackdropPreloader";
 
 export function App() {
   // --- Application State ---
   const [runtime, setRuntime] = useState<StudioRuntime | null>(null);
+
   const [, refresh] = useState(0);
+
   const [message, setMessage] = useState({ text: "", error: false });
+
   const [loading, setLoading] = useState("Loading characters…");
+
   const [busy, setBusy] = useState(false);
 
-  // --- UI State ---
-  const [packNavigation, navigatePack] = useReducer(packNavigationReducer, initialPackNavigation);
+  // --- UI State & Navigation ---
+  const [packNavigation, navigatePack] = useReducer(
+    packNavigationReducer,
+    initialPackNavigation,
+  );
   const { packId, tab, origin } = packNavigation;
+
   const [menu, setMenu] = useState(false);
+
   const [selectedEmote, setSelectedEmote] = useState<string | null>(null);
+
   const ownedEmotes = ["animation.jump", "animation.wave"];
+
   const [expanded, setExpanded] = useState(false);
+
   const [thumbnails, setThumbnails] = useState<ThumbnailRenderer | null>(null);
+
   const [envIndex, setEnvIndex] = useState(0);
+
   const envs = ENVIRONMENTS;
 
-  useEffect(() => {
-    if (!runtime) return;
-    return preloadBackdrops(import.meta.env.BASE_URL);
-  }, [runtime]);
+  const panelKey = tab === 3 ? "emotes" : packId ?? "catalog";
 
   // --- DOM References ---
   const pngInput = useRef<HTMLInputElement>(null);
+
   const skinPanel = useRef<HTMLElement>(null);
+
   const panelScroll = useRef(new Map<string, number>());
-  const panelKey = tab === 3 ? "emotes" : packId ?? "catalog";
+
   const room = useRef<HTMLElement>(null);
+
+  const navigation = useRef<HTMLElement>(null);
+
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  const mounted = useRef(true);
+
+  // --- Effects: Asset Preloading & Responsive Sizing ---
+  useEffect(() => {
+    if (!runtime) return;
+
+    return preloadBackdrops(import.meta.env.BASE_URL);
+  }, [runtime]);
 
   useLayoutEffect(() => {
     const element = room.current!;
-    // Keep controls sized to their normal grid tracks when panels expand.
 
+    // Keep controls sized to their normal grid tracks when panels expand.
     const resize = () => {
       const columns = getComputedStyle(element).gridTemplateColumns.split(" ");
       const railWidth = parseFloat(columns[0]);
-      if (Number.isFinite(railWidth))
+
+      if (Number.isFinite(railWidth)) {
         element.style.setProperty("--rail-button-width", `${railWidth - 4}px`);
+      }
+
       const width = parseFloat(columns[columns.length - 1]);
-      if (Number.isFinite(width))
+      if (Number.isFinite(width)) {
         element.style.setProperty(
           "--preview-button-size",
           `${Math.max(46, width * 0.09)}px`,
         );
+      }
     };
 
     resize();
+
     const observer = new ResizeObserver(resize);
     observer.observe(element);
+
     return () => observer.disconnect();
   }, []);
-  const mounted = useRef(true);
-  const navigation = useRef<HTMLElement>(null);
-  const menuButton = useRef<HTMLButtonElement>(null);
+
+  // --- Navigation & Error Callbacks ---
   const returnToCatalog = useCallback(() => {
     navigatePack({ type: "catalog" });
-    window.history.replaceState(window.history.state, "", catalogLocation(window.location.href));
+    window.history.replaceState(
+      window.history.state,
+      "",
+      catalogLocation(window.location.href),
+    );
   }, []);
 
   const notify = useCallback((text: string, error = false) => {
-    if (mounted.current) setMessage({ text, error });
+    if (mounted.current) {
+      setMessage({ text, error });
+    }
   }, []);
 
   const onError = useCallback(
@@ -95,25 +147,45 @@ export function App() {
     [notify],
   );
 
+  // --- Runtime Initialization ---
   useEffect(() => {
-    let active = true,
-      created: StudioRuntime | undefined;
+    let active = true;
+    let created: StudioRuntime | undefined;
+
     mounted.current = true;
+
     createRuntime()
       .then(async (r) => {
         created = r;
+
         if (!active) {
           r.dispose();
           return;
         }
 
-        const requestedPack = requestedSkinPack(r.catalog.packs.values(), window.location.search);
+        const requestedPack = requestedSkinPack(
+          r.catalog.packs.values(),
+          window.location.search,
+        );
+
         if (requestedPack) {
-          const firstSkin = [...r.catalog.skins.values()].find((skin) => skin.packId === requestedPack.id);
-          if (firstSkin) await r.views[0].change(firstSkin);
+          const firstSkin = [...r.catalog.skins.values()].find(
+            (skin) => skin.packId === requestedPack.id,
+          );
+
+          if (firstSkin) {
+            await r.views[0].change(firstSkin);
+          }
+
           if (!active) return;
-          navigatePack({ type: "open", packId: requestedPack.id, origin: packEntryOrigin(window.location.search) });
+
+          navigatePack({
+            type: "open",
+            packId: requestedPack.id,
+            origin: packEntryOrigin(window.location.search),
+          });
         }
+
         r.onChange = () => refresh((n) => n + 1);
         setRuntime(r);
         setLoading("");
@@ -133,6 +205,7 @@ export function App() {
     };
   }, [notify, onError]);
 
+  // --- Development Debug Helpers ---
   useEffect(() => {
     if (runtime && import.meta.env.DEV) {
       window.studio = {
@@ -143,6 +216,7 @@ export function App() {
       const timer = setInterval(() => {
         window.studio!.ready = runtime.views.every((v) => v.renderer);
       }, 50);
+
       return () => {
         clearInterval(timer);
         delete window.studio;
@@ -150,8 +224,12 @@ export function App() {
     }
   }, [runtime]);
 
-  useEffect(() => () => thumbnails?.dispose(), [thumbnails]);
+  // --- Thumbnail Renderer Cleanup ---
+  useEffect(() => {
+    return () => thumbnails?.dispose();
+  }, [thumbnails]);
 
+  // --- Keyboard & Focus Trapping ---
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -160,31 +238,72 @@ export function App() {
           menuButton.current?.focus();
           return;
         }
-        if (tab === 2 && packId) returnToCatalog();
+
+        if (tab === 2 && packId) {
+          returnToCatalog();
+        }
+
         setExpanded(false);
         setMenu(false);
       }
     };
 
     window.addEventListener("keydown", key);
+
     return () => window.removeEventListener("keydown", key);
   }, [menu, packId, tab, returnToCatalog]);
 
   useLayoutEffect(() => {
-    if (skinPanel.current) skinPanel.current.scrollTop = panelScroll.current.get(panelKey) ?? 0;
+    if (skinPanel.current) {
+      skinPanel.current.scrollTop = panelScroll.current.get(panelKey) ?? 0;
+    }
   }, [panelKey, runtime]);
 
   useEffect(() => {
     if (!message.text || message.error) return;
+
     const timer = setTimeout(
       () => setMessage({ text: "", error: false }),
       4000,
     );
+
     return () => clearTimeout(timer);
   }, [message]);
 
+  useEffect(() => {
+    if (!menu) return;
+
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+
+      const buttons = navigation.current?.querySelectorAll<HTMLButtonElement>(
+        "button:not(:disabled)",
+      );
+
+      if (!buttons?.length) return;
+
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    menuButton.current?.focus();
+    window.addEventListener("keydown", trapFocus);
+
+    return () => window.removeEventListener("keydown", trapFocus);
+  }, [menu]);
+
+  // --- Skin Selection & Custom Skin Upload Handlers ---
   const selectSkin = async (skin: SkinDefinition) => {
     if (!runtime) return;
+
     try {
       await runtime.views[0].change(skin, null);
       notify("");
@@ -197,10 +316,15 @@ export function App() {
     const input = e.currentTarget;
     const file = input.files?.[0];
     input.value = "";
+
     if (!file || !runtime) return;
+
     setBusy(true);
+
     try {
-      const skin = runtime.catalog.addPNG(await runtime.importer.png(file, "classic"));
+      const skin = runtime.catalog.addPNG(
+        await runtime.importer.png(file, "classic"),
+      );
       runtime.onChange();
       await selectSkin(skin);
       returnToCatalog();
@@ -212,30 +336,18 @@ export function App() {
     }
   };
 
-  useEffect(() => {
-    if (!menu) return;
-    const trapFocus = (event: KeyboardEvent) => {
-      if (event.key !== "Tab") return;
-      const buttons = navigation.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
-      if (!buttons?.length) return;
-      const first = buttons[0], last = buttons[buttons.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault(); last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault(); first.focus();
-      }
-    };
-    menuButton.current?.focus();
-    window.addEventListener("keydown", trapFocus);
-    return () => window.removeEventListener("keydown", trapFocus);
-  }, [menu]);
-
+  // --- Derived Character & Catalog State ---
   const player = runtime?.views[0];
   const skins = runtime ? [...runtime.catalog.skins.values()] : [];
   const packs = runtime ? [...runtime.catalog.packs.values()] : [];
+
   const groups = [
-    { id: "custom", name: "Imported Skins", owned: true,
-      skins: skins.filter((s) => !s.packId) },
+    {
+      id: "custom",
+      name: "Imported Skins",
+      owned: true,
+      skins: skins.filter((s) => !s.packId),
+    },
     ...packs.map((p) => ({
       id: p.id,
       name: p.name,
@@ -243,13 +355,19 @@ export function App() {
       skins: skins.filter((s) => s.packId === p.id),
     })),
   ];
+
   const openPack = groups.find((p) => p.id === packId);
   const isCustom = player?.character.skin.packId === null;
   const isImport = player?.character.skin.isImportPlaceholder === true;
-  const selectedPrice = tab === 3
-    ? emotePrice(selectedEmote, ownedEmotes)
-    : skinPackPrice(packs.find((pack) => pack.id === player?.character.skin.packId));
 
+  const selectedPrice =
+    tab === 3
+      ? emotePrice(selectedEmote, ownedEmotes)
+      : skinPackPrice(
+          packs.find((pack) => pack.id === player?.character.skin.packId),
+        );
+
+  // --- Render Helpers ---
   const tile = (skin: SkinDefinition) =>
     thumbnails && (
       <SkinTile
@@ -264,23 +382,52 @@ export function App() {
         onError={onError}
       />
     );
-  const emoteTile = (id: string, owned: boolean) => runtime && thumbnails && (
-    <EmoteTile key={id} id={id} name={runtime.library.get(id).name} owned={owned} locked={!owned}
-      renderer={thumbnails} selected={selectedEmote === id} onError={onError}
-      onSelect={() => {
-        if (!player) return;
-        setSelectedEmote(id);
-        void runtime.animations.play(player.character, id).catch(onError);
-      }} />
-  );
+
+  const emoteTile = (id: string, owned: boolean) =>
+    runtime &&
+    thumbnails && (
+      <EmoteTile
+        key={id}
+        id={id}
+        name={runtime.library.get(id).name}
+        owned={owned}
+        locked={!owned}
+        renderer={thumbnails}
+        selected={selectedEmote === id}
+        onError={onError}
+        onSelect={() => {
+          if (!player) return;
+          setSelectedEmote(id);
+          void runtime.animations.play(player.character, id).catch(onError);
+        }}
+      />
+    );
+
   return (
     <main
       ref={room}
       className={`dressing-room ${tab === 3 ? "emotes-view" : ""} ${expanded ? "preview-expanded" : ""}`}
     >
-      {menu && <button className="navigation-backdrop" aria-label="Close navigation" tabIndex={-1}
-        onClick={() => { setMenu(false); menuButton.current?.focus(); }} />}
-      <nav ref={navigation} id="dressing-navigation" className={`tab-rail ${menu ? "menu-open" : ""}`} aria-label="Dressing room tabs">
+      {/* --- Sidebar Flyout Backdrop --- */}
+      {menu && (
+        <button
+          className="navigation-backdrop"
+          aria-label="Close navigation"
+          tabIndex={-1}
+          onClick={() => {
+            setMenu(false);
+            menuButton.current?.focus();
+          }}
+        />
+      )}
+
+      {/* --- Left Navigation Rail --- */}
+      <nav
+        ref={navigation}
+        id="dressing-navigation"
+        className={`tab-rail ${menu ? "menu-open" : ""}`}
+        aria-label="Dressing room tabs"
+      >
         <button
           ref={menuButton}
           className="menu-button"
@@ -293,33 +440,64 @@ export function App() {
           <span />
           <span />
         </button>
-        {["My Characters", "Character Creator", "Classic Skins", "Emotes", "Capes"].map(
-          (name, i) => (
-            <button
-              key={name}
-              className={`rail-tab ${tab === i ? "active" : ""}`}
-              aria-label={name}
-              aria-pressed={tab === i}
-              aria-current={tab === i ? "page" : undefined}
-              disabled={i !== 2 && i !== 3}
-              onClick={() => {
-                if (runtime) runtime.animations.stop(runtime.views[0].character);
-                navigatePack({ type: "tab", tab: i }); setSelectedEmote(null); setMenu(false); menuButton.current?.focus();
-              }}
-            >
-              <img
-                className="tab-icon"
-                src={`${import.meta.env.BASE_URL}assets/ui/tab-${i}.png`}
-                alt=""
-              />
-              {menu && <span className="navigation-label">{name}</span>}
-            </button>
-          ),
+
+        {[
+          "My Characters",
+          "Character Creator",
+          "Classic Skins",
+          "Emotes",
+          "Capes",
+        ].map((name, i) => (
+          <button
+            key={name}
+            className={`rail-tab ${tab === i ? "active" : ""}`}
+            aria-label={name}
+            aria-pressed={tab === i}
+            aria-current={tab === i ? "page" : undefined}
+            disabled={i !== 2 && i !== 3}
+            onClick={() => {
+              if (runtime) {
+                runtime.animations.stop(runtime.views[0].character);
+              }
+
+              navigatePack({ type: "tab", tab: i });
+              setSelectedEmote(null);
+              setMenu(false);
+              menuButton.current?.focus();
+            }}
+          >
+            <img
+              className="tab-icon"
+              src={`${import.meta.env.BASE_URL}assets/ui/tab-${i}.png`}
+              alt=""
+            />
+            {menu && <span className="navigation-label">{name}</span>}
+          </button>
+        ))}
+
+        {menu && (
+          <button
+            className="marketplace-button"
+            type="button"
+            onClick={() =>
+              window.location.assign(marketplaceUrl(import.meta.env.BASE_URL))
+            }
+          >
+            Go to Marketplace
+          </button>
         )}
-        {menu && <button className="marketplace-button" type="button" onClick={() => window.location.assign(marketplaceUrl(import.meta.env.BASE_URL))}>Go to Marketplace</button>}
       </nav>
-      <section ref={skinPanel} className={`skin-panel ${tab === 3 ? "emote-panel" : ""}`} aria-label={tab === 3 ? "Emotes" : "Skin packs"} inert={menu}
-        onScroll={(event) => panelScroll.current.set(panelKey, event.currentTarget.scrollTop)}>
+
+      {/* --- Catalog & Emotes Skin Panel --- */}
+      <section
+        ref={skinPanel}
+        className={`skin-panel ${tab === 3 ? "emote-panel" : ""}`}
+        aria-label={tab === 3 ? "Emotes" : "Skin packs"}
+        inert={menu}
+        onScroll={(event) =>
+          panelScroll.current.set(panelKey, event.currentTarget.scrollTop)
+        }
+      >
         {tab === 3 ? (
           <div className="pack-rows">
             <section className="catalog-section" aria-label="Owned Emotes">
@@ -328,49 +506,100 @@ export function App() {
                 {ownedEmotes.map((id) => emoteTile(id, true))}
               </div>
             </section>
+
             <section className="catalog-section" aria-label="Get More">
               <h2 className="catalog-heading">Get More</h2>
-              <div className="emote-grid">{runtime && ["animation.clap", "animation.spin-jump", "animation.head-spin"].filter((id) => !ownedEmotes.includes(id)).map((id) => emoteTile(id, false))}</div>
+              <div className="emote-grid">
+                {runtime &&
+                  [
+                    "animation.clap",
+                    "animation.spin-jump",
+                    "animation.head-spin",
+                  ]
+                    .filter((id) => !ownedEmotes.includes(id))
+                    .map((id) => emoteTile(id, false))}
+              </div>
             </section>
           </div>
         ) : openPack ? (
           <>
-            <PackViewControls origin={origin} onCatalog={returnToCatalog}
-              onMarketplace={() => window.location.assign(marketplaceUrl(import.meta.env.BASE_URL))} />
+            <PackViewControls
+              origin={origin}
+              onCatalog={returnToCatalog}
+              onMarketplace={() =>
+                window.location.assign(marketplaceUrl(import.meta.env.BASE_URL))
+              }
+            />
+
             <div className="skin-grid" aria-label={openPack.name}>
               {openPack.skins.map(tile)}
             </div>
           </>
         ) : (
           <div className="pack-rows">
-            {[{ name: "Owned Skins", owned: true }, { name: "Get More", owned: false }].map((section) => (
-              <section className="catalog-section" key={section.name} aria-label={section.name}>
+            {[
+              { name: "Owned Skins", owned: true },
+              { name: "Get More", owned: false },
+            ].map((section) => (
+              <section
+                className="catalog-section"
+                key={section.name}
+                aria-label={section.name}
+              >
                 <h2 className="catalog-heading">{section.name}</h2>
-                {groups.filter((pack) => pack.owned === section.owned).map((pack) => (
-                  <section className={`skin-pack ${pack.id === "custom" ? "imported-skins" : ""}`} key={pack.id}>
-                    {pack.id !== "custom" && <h3>{pack.name}</h3>}
-                    <div className="skin-row">
-                      {pack.skins.slice(0, pack.id === "custom" ? 4 : 5).map(tile)}
-                      {pack.skins.length > (pack.id === "custom" ? 4 : 5) && (
-                        <button className="overflow-tile" aria-label={`Show all ${pack.name} skins`}
-                          onClick={() => navigatePack({ type: "open", packId: pack.id, origin: "catalog" })}>
-                          <span>+{pack.skins.length - (pack.id === "custom" ? 4 : 5)}</span>
-                        </button>
-                      )}
-                    </div>
-                  </section>
-                ))}
+                {groups
+                  .filter((pack) => pack.owned === section.owned)
+                  .map((pack) => (
+                    <section
+                      className={`skin-pack ${pack.id === "custom" ? "imported-skins" : ""}`}
+                      key={pack.id}
+                    >
+                      {pack.id !== "custom" && <h3>{pack.name}</h3>}
+
+                      <div className="skin-row">
+                        {pack.skins
+                          .slice(0, pack.id === "custom" ? 4 : 5)
+                          .map(tile)}
+
+                        {pack.skins.length >
+                          (pack.id === "custom" ? 4 : 5) && (
+                          <button
+                            className="overflow-tile"
+                            aria-label={`Show all ${pack.name} skins`}
+                            onClick={() =>
+                              navigatePack({
+                                type: "open",
+                                packId: pack.id,
+                                origin: "catalog",
+                              })
+                            }
+                          >
+                            <span>
+                              +{pack.skins.length - (pack.id === "custom" ? 4 : 5)}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    </section>
+                  ))}
               </section>
             ))}
           </div>
         )}
+
         {loading && (
           <p className="loading" role="status">
             {loading}
           </p>
         )}
       </section>
-      <section className="character-panel" aria-label="Current player" inert={menu}>
+
+      {/* --- Character 3D Stage & Information Panel --- */}
+      <section
+        className="character-panel"
+        aria-label="Current player"
+        inert={menu}
+      >
         <div className="player-stage">
           <div
             className={`preview-backdrop ${envs[envIndex] !== "none" ? "has-image" : ""}`}
@@ -386,9 +615,11 @@ export function App() {
                 : undefined
             }
           />
+
           {runtime && player && (
             <PlayerPreview runtime={runtime} view={player} tracking />
           )}
+
           <button
             className="expand-button minecraft-button"
             aria-label={expanded ? "Restore preview size" : "Expand preview"}
@@ -401,6 +632,7 @@ export function App() {
               alt=""
             />
           </button>
+
           <button
             className="env-button minecraft-button"
             aria-label="Change environment"
@@ -413,39 +645,98 @@ export function App() {
             />
           </button>
         </div>
+
         <section
           className="skin-information"
-          aria-label={tab === 3 ? "Selected emote information" : "Selected skin information"}
+          aria-label={
+            tab === 3
+              ? "Selected emote information"
+              : "Selected skin information"
+          }
         >
-          {tab === 3 ? <>
-            <header><h1>{selectedEmote ? runtime?.library.get(selectedEmote).name : "Getting Started"}</h1></header>
-            <div className="information-content">
-              <p className="information-spacer" aria-hidden="true">
-                <img src={`${import.meta.env.BASE_URL}assets/ui/light-bulb.svg`} alt="" />
-                <span>Import a png (64x32, 64x64, or 128x128) from your device to use as your skin. This will not sync between devices or games.</span>
-              </p>
-              <p className="emote-description">{selectedEmote ? "" : "Select items on the left to see how they look on your character!"}</p>
-            </div>
-          </> : <>
-          <header>
-            <h1 title={player?.character.skin.name}>{player?.character.skin.name}</h1>
-            {!isCustom && <span>{groups.find((p) => p.skins.some((s) => s.id === player?.character.skin.id))?.name}</span>}
-          </header>
-          <div className="information-content">
-            <p className={isImport ? "import-guidance" : "information-spacer"} aria-hidden={!isImport}>
-              <img src={`${import.meta.env.BASE_URL}assets/ui/light-bulb.svg`} alt="" />
-              <span>Import a png (64x32, 64x64, or 128x128) from your device to use as your skin. This will not sync between devices or games.</span>
-            </p>
-            {isCustom && <button
-              className="choose-skin minecraft-button"
-              disabled={!runtime || busy}
-              onClick={() => pngInput.current?.click()}
-            >Choose New Skin</button>}
-          </div>
-          </>}
+          {tab === 3 ? (
+            <>
+              <header>
+                <h1>
+                  {selectedEmote
+                    ? runtime?.library.get(selectedEmote).name
+                    : "Getting Started"}
+                </h1>
+              </header>
+
+              <div className="information-content">
+                <p className="information-spacer" aria-hidden="true">
+                  <img
+                    src={`${import.meta.env.BASE_URL}assets/ui/light-bulb.svg`}
+                    alt=""
+                  />
+                  <span>
+                    Import a png (64x32, 64x64, or 128x128) from your device to
+                    use as your skin. This will not sync between devices or
+                    games.
+                  </span>
+                </p>
+
+                <p className="emote-description">
+                  {selectedEmote
+                    ? ""
+                    : "Select items on the left to see how they look on your character!"}
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <header>
+                <h1 title={player?.character.skin.name}>
+                  {player?.character.skin.name}
+                </h1>
+                {!isCustom && (
+                  <span>
+                    {
+                      groups.find((p) =>
+                        p.skins.some((s) => s.id === player?.character.skin.id),
+                      )?.name
+                    }
+                  </span>
+                )}
+              </header>
+
+              <div className="information-content">
+                <p
+                  className={
+                    isImport ? "import-guidance" : "information-spacer"
+                  }
+                  aria-hidden={!isImport}
+                >
+                  <img
+                    src={`${import.meta.env.BASE_URL}assets/ui/light-bulb.svg`}
+                    alt=""
+                  />
+                  <span>
+                    Import a png (64x32, 64x64, or 128x128) from your device to
+                    use as your skin. This will not sync between devices or
+                    games.
+                  </span>
+                </p>
+
+                {isCustom && (
+                  <button
+                    className="choose-skin minecraft-button"
+                    disabled={!runtime || busy}
+                    onClick={() => pngInput.current?.click()}
+                  >
+                    Choose New Skin
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
           <GetThisButton price={selectedPrice} />
         </section>
       </section>
+
+      {/* --- Hidden File Inputs & Status Alerts --- */}
       <input
         ref={pngInput}
         id="png-upload"
@@ -455,6 +746,7 @@ export function App() {
         disabled={!runtime || busy}
         onChange={upload}
       />
+
       {message.text && (
         <p className={`message ${message.error ? "error" : ""}`} role="status">
           {message.text}

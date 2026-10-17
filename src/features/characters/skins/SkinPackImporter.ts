@@ -45,6 +45,7 @@ export function safePath(path: string) {
     path.includes("\\") ||
     path.startsWith("/") ||
     path.split("/").some((x) => x === ".." || x === "." || x === "") ||
+    // eslint-disable-next-line no-control-regex
     /[:\u0000-\u001f]/.test(path)
   )
     fail("invalid_path", `Unsafe pack path: ${path}`);
@@ -59,9 +60,10 @@ export async function decodePNG(blob: Blob): Promise<ImageBitmap> {
     String.fromCharCode(...bytes.slice(12, 16)) !== "IHDR"
   )
     fail("unreadable_png", "Texture is not a PNG.");
-  const d = new DataView(bytes.buffer),
-    width = d.getUint32(16),
-    height = d.getUint32(20);
+
+  const d = new DataView(bytes.buffer);
+  const width = d.getUint32(16);
+  const height = d.getUint32(20);
   if (!(
     (width === 64 && [32, 64].includes(height)) ||
     (width === 128 && height === 128)
@@ -89,14 +91,16 @@ function archiveEntries(buffer: ArrayBuffer) {
   if (end < 0) fail("invalid_archive", "ZIP directory is missing.");
   if (d.getUint16(end + 4, true) || d.getUint16(end + 6, true))
     fail("unsupported_archive", "Split archives are unsupported.");
-  const count = d.getUint16(end + 10, true),
-    offset = d.getUint32(end + 16, true);
+  const count = d.getUint16(end + 10, true);
+  const offset = d.getUint32(end + 16, true);
+
   if (count === 65535 || offset === 0xffffffff)
     fail("unsupported_archive", "ZIP64 archives are unsupported.");
   if (count > LIMITS.entries)
     fail("archive_limit", "Too many archive entries.");
-  let p = offset,
-    total = 0;
+
+  let p = offset;
+  let total = 0;
   const paths = new Set();
   for (let i = 0; i < count; i++) {
     if (p + 46 > d.byteLength || d.getUint32(p, true) !== 0x02014b50)
@@ -106,9 +110,10 @@ function archiveEntries(buffer: ArrayBuffer) {
     total += d.getUint32(p + 24, true);
     if (total > LIMITS.expanded)
       fail("archive_limit", "Expanded archive exceeds 50 MiB.");
-    const n = d.getUint16(p + 28, true),
-      e = d.getUint16(p + 30, true),
-      c = d.getUint16(p + 32, true);
+
+    const n = d.getUint16(p + 28, true);
+    const e = d.getUint16(p + 30, true);
+    const c = d.getUint16(p + 32, true);
     const name = new TextDecoder().decode(new Uint8Array(buffer, p + 46, n));
     safePath(name.endsWith("/") ? name.slice(0, -1) : name);
     if (paths.has(name))
@@ -229,14 +234,16 @@ export class SkinPackImporter {
       }
     };
 
-    const rawManifest = await parse("manifest.json"),
-      rawMetadata = await parse("skins.json");
+    const rawManifest = await parse("manifest.json");
+    const rawMetadata = await parse("skins.json");
+
     if (!isObject(rawManifest))
       fail("invalid_manifest", "Manifest must be an object.");
     if (rawManifest.format_version !== 1 && rawManifest.format_version !== 2)
       fail("unsupported_manifest", "Supported manifest versions: 1 and 2.");
-    const h = rawManifest.header,
-      modules = rawManifest.modules;
+
+    const h = rawManifest.header;
+    const modules = rawManifest.modules;
     if (
       !isObject(h) ||
       typeof h.name !== "string" ||
@@ -275,8 +282,8 @@ export class SkinPackImporter {
     )
       fail("invalid_skin_definitions", "Invalid pack skin definitions.");
     // These assertions follow the runtime checks; unknown optional metadata stays intact.
-    const manifest = rawManifest as Manifest,
-      sourceMetadata = rawMetadata as SkinMetadata;
+    const manifest = rawManifest as Manifest;
+    const sourceMetadata = rawMetadata as SkinMetadata;
     const localization: Record<string, Record<string, string>> = {};
 
     for (const [path, blob] of packFiles)
@@ -304,8 +311,8 @@ export class SkinPackImporter {
         sourceMetadata.serialize_name,
       ]),
     ];
-    const id = h.uuid.toLowerCase(),
-      revision = h.version.join(".");
+    const id = h.uuid.toLowerCase();
+    const revision = h.version.join(".");
     const pack: PackDefinition = {
       id,
       version: h.version,
@@ -398,8 +405,8 @@ export class SkinPackImporter {
   ): Promise<SkinDefinition> {
     if (!["classic", "slim"].includes(sourceArmLayout))
       fail("invalid_layout", "Choose classic or slim source layout.");
-    const image = await decodePNG(blob),
-      layout = image.height === 32 ? "classic" : sourceArmLayout;
+    const image = await decodePNG(blob);
+    const layout = image.height === 32 ? "classic" : sourceArmLayout;
     const id =
       "png:" +
       (await fingerprint(new Map([["skin.png", blob]]))) +

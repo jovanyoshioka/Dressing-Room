@@ -15,28 +15,41 @@ function Player({
   view: CharacterView;
   tracking: boolean;
 }) {
-  const group = useRef<THREE.Group>(null),
-    target = useRef(new THREE.Vector2()),
-    framing = useRef<{ bounds: THREE.Box3 | null; aspect: number; distance: number }>({ bounds: null, aspect: 0, distance: 5.4 }),
-    { camera, gl, scene } = useThree();
+  const group = useRef<THREE.Group>(null);
+  const target = useRef(new THREE.Vector2());
+  const framing = useRef<{
+    bounds: THREE.Box3 | null;
+    aspect: number;
+    distance: number;
+  }>({ bounds: null, aspect: 0, distance: 5.4 });
+
+  const { camera, gl, scene } = useThree();
 
   const jumpBounds = useMemo(
-    () => new Map(["animation.jump", "animation.spin-jump"].map((id) => {
-      const animation = runtime.library.get(id);
-      return [animation.name, animationBounds(view.character.model, animation.clip)];
-    })),
+    () =>
+      new Map(
+        ["animation.jump", "animation.spin-jump"].map((id) => {
+          const animation = runtime.library.get(id);
+          return [
+            animation.name,
+            animationBounds(view.character.model, animation.clip),
+          ];
+        }),
+      ),
     [runtime, view.character],
   );
 
   useEffect(() => {
     camera.lookAt(0, 1, 0);
     camera.updateProjectionMatrix();
+
     view.camera = camera;
     view.renderer = gl;
     view.scene = scene;
+
     const canvas = gl.domElement;
-    let dragging = false,
-      lastX = 0;
+    let dragging = false;
+    let lastX = 0;
 
     const moveHead = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
@@ -70,6 +83,7 @@ function Player({
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", up);
     canvas.addEventListener("pointercancel", up);
+
     return () => {
       window.removeEventListener("pointermove", moveHead);
       canvas.removeEventListener("pointerdown", down);
@@ -79,23 +93,57 @@ function Player({
       view.character.model.getObjectByName("head")?.quaternion.identity();
     };
   }, [view, gl, camera, scene]);
+
   useFrame((_, delta) => {
-    if (group.current) group.current.rotation.y = view.angle;
+    if (group.current) {
+      group.current.rotation.y = view.angle;
+    }
+
     const head = view.character.model.getObjectByName("head")!;
-    const activeBounds = jumpBounds.get(runtime.animations.status(view.character).name);
+    const activeBounds = jumpBounds.get(
+      runtime.animations.status(view.character).name,
+    );
     const playingJump = !!activeBounds;
+
     if (camera instanceof THREE.PerspectiveCamera) {
-      if (playingJump && (framing.current.bounds !== activeBounds || framing.current.aspect !== camera.aspect)) {
-        framing.current = { bounds: activeBounds!, aspect: camera.aspect, distance: animationCameraDistance(camera, activeBounds!) };
+      if (
+        playingJump &&
+        (framing.current.bounds !== activeBounds ||
+          framing.current.aspect !== camera.aspect)
+      ) {
+        framing.current = {
+          bounds: activeBounds!,
+          aspect: camera.aspect,
+          distance: animationCameraDistance(camera, activeBounds!),
+        };
       }
+
       const distance = playingJump ? framing.current.distance : 5.4;
+
       // The anticipation at the start of Jump gives the camera time to pull back.
-      camera.position.z = THREE.MathUtils.damp(camera.position.z, distance, playingJump ? 16 : 8, delta);
-      if (Math.abs(camera.position.z - distance) < 0.001) camera.position.z = distance;
+      camera.position.z = THREE.MathUtils.damp(
+        camera.position.z,
+        distance,
+        playingJump ? 16 : 8,
+        delta,
+      );
+
+      if (Math.abs(camera.position.z - distance) < 0.001) {
+        camera.position.z = distance;
+      }
+
       camera.lookAt(0, 1, 0);
     }
+
     runtime.animations.update(view.character, delta);
-    updateHeadTracking(head, target.current, delta, tracking, runtime.animations.status(view.character).busy);
+
+    updateHeadTracking(
+      head,
+      target.current,
+      delta,
+      tracking,
+      runtime.animations.status(view.character).busy,
+    );
   });
 
   return (

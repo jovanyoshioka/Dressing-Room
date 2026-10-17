@@ -18,10 +18,11 @@ export class AnimationLibrary {
           `${import.meta.env.BASE_URL}assets/animations/${name}.json`,
         );
         if (!response.ok) throw new Error("Animation metadata missing.");
-        const metadata = readMetadata(await response.json()),
-          gltf = await this.loader.loadAsync(
-            import.meta.env.BASE_URL + metadata.asset,
-          );
+
+        const metadata = readMetadata(await response.json());
+        const gltf = await this.loader.loadAsync(
+          import.meta.env.BASE_URL + metadata.asset,
+        );
         const clip = gltf.animations.find((c) => c.name === metadata.name);
         if (!clip) throw new Error(`Missing ${metadata.name} clip.`);
         for (const track of clip.tracks) {
