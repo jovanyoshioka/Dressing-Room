@@ -51,6 +51,64 @@ function Player({
     let dragging = false;
     let lastX = 0;
 
+    const rotationDegrees = () => {
+      const degrees = THREE.MathUtils.radToDeg(view.angle);
+      return degrees >= 0 && degrees <= 360
+        ? degrees
+        : ((degrees % 360) + 360) % 360;
+    };
+
+    const updateRotationValue = () => {
+      const degrees = Math.round(rotationDegrees());
+      canvas.setAttribute("aria-valuenow", String(degrees));
+      canvas.setAttribute("aria-valuetext", `${degrees} degrees`);
+    };
+
+    canvas.tabIndex = 0;
+    canvas.setAttribute("role", "slider");
+    canvas.setAttribute("aria-label", "Character rotation");
+    canvas.setAttribute("aria-orientation", "horizontal");
+    canvas.setAttribute("aria-valuemin", "0");
+    canvas.setAttribute("aria-valuemax", "360");
+    canvas.setAttribute(
+      "aria-description",
+      "Use the arrow keys to rotate the character. Hold Shift for larger steps. Home and End face forward. You can also drag to rotate.",
+    );
+    canvas.title = "Drag or use arrow keys to rotate the character";
+    updateRotationValue();
+
+    const key = (e: KeyboardEvent) => {
+      canvas.removeAttribute("data-pointer-focus");
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+
+      const degrees = rotationDegrees();
+      const step = e.shiftKey ? 15 : 5;
+      let next: number;
+
+      switch (e.key) {
+        case "ArrowLeft":
+        case "ArrowDown":
+          next = degrees - step;
+          break;
+        case "ArrowRight":
+        case "ArrowUp":
+          next = degrees + step;
+          break;
+        case "Home":
+          next = 0;
+          break;
+        case "End":
+          next = 360;
+          break;
+        default:
+          return;
+      }
+
+      e.preventDefault();
+      view.angle = THREE.MathUtils.degToRad(next);
+      updateRotationValue();
+    };
+
     const moveHead = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
       target.current.set(
@@ -60,6 +118,8 @@ function Player({
     };
 
     const down = (e: PointerEvent) => {
+      canvas.setAttribute("data-pointer-focus", "");
+      canvas.focus({ preventScroll: true });
       dragging = true;
       lastX = e.clientX;
       canvas.setPointerCapture(e.pointerId);
@@ -70,6 +130,7 @@ function Player({
       if (dragging) {
         view.angle += (e.clientX - lastX) * 0.012;
         lastX = e.clientX;
+        updateRotationValue();
       }
     };
 
@@ -78,7 +139,11 @@ function Player({
       canvas.style.cursor = "grab";
     };
 
+    const blur = () => canvas.removeAttribute("data-pointer-focus");
+
     window.addEventListener("pointermove", moveHead);
+    canvas.addEventListener("keydown", key);
+    canvas.addEventListener("blur", blur);
     canvas.addEventListener("pointerdown", down);
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", up);
@@ -86,6 +151,8 @@ function Player({
 
     return () => {
       window.removeEventListener("pointermove", moveHead);
+      canvas.removeEventListener("keydown", key);
+      canvas.removeEventListener("blur", blur);
       canvas.removeEventListener("pointerdown", down);
       canvas.removeEventListener("pointermove", move);
       canvas.removeEventListener("pointerup", up);

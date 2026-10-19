@@ -244,6 +244,10 @@ select:focus-visible {
   touch-action: none;
   z-index: 1;
 }
+.player-canvas canvas:focus-visible:not([data-pointer-focus]) {
+  outline: 3px solid #8ce8f2;
+  outline-offset: -5px;
+}
 .preview-backdrop {
   position: absolute;
   inset: 0;
